@@ -1,28 +1,156 @@
-// Isometric test floor: walk the current character over 64 x 32 tiles with the same
-// fixed 2:1 camera as the game (SE = world +X = screen (+32, +16), SW = world +Y).
+// Isometric test floor, drawn as true pixel art: 64 x 32 tiles with 2:1 staircase edges,
+// the same fixed camera as the game (SE = world +X = screen (+32, +16), SW = world +Y),
+// whole-pixel positions, and integer display scaling so nothing shimmers.
 (function () {
   const SG = (window.SG = window.SG || {});
   const TW = 64, TH = 32, N = 6;
+  const VIEW_W = 448, VIEW_H = 300;
+  const ORIGIN = [VIEW_W / 2, 74]; // screen position of the top corner of tile (0, 0)
+  const EDGE = 6; // floor thickness in pixels
   const DIRV = { S: [1, 1], SW: [0, 1], W: [-1, 1], NW: [-1, 0], N: [-1, -1], NE: [0, -1], E: [1, -1], SE: [1, 0] };
   const SCREEN_ORDER = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE']; // by screen angle, 45 degree steps
-  const PROPS = [{ wx: 1.5, wy: 4.5, h: 26, c: ['#8a5a34', '#6e4628', '#a8744a'] }, { wx: 4.5, wy: 1.5, h: 18, c: ['#4a6a3a', '#3a5430', '#5e8448'] }];
+  const OUTLINE = [29, 20, 36];
 
-  let cv, ctx, origin;
+  let cv, ctx;
+  let tiles, edges, props, shadow;
   const ch = { wx: 3, wy: 3, dir: 'S', moving: false, running: false, clock: 0, target: null };
   const keys = new Set();
   const cache = new WeakMap();
 
-  const toScreen = (wx, wy) => [origin[0] + ((wx - wy) * TW) / 2, origin[1] + ((wx + wy) * TH) / 2];
+  // world -> screen, rounded onto the 2:1 pixel lattice (1/16 of a tile is 2 px across, 1 px down)
+  function toScreen(wx, wy) {
+    const i = Math.round(wx * 16), j = Math.round(wy * 16);
+    return [ORIGIN[0] + 2 * (i - j), ORIGIN[1] + (i + j)];
+  }
   const toWorld = (sx, sy) => {
-    const x = (sx - origin[0]) / (TW / 2), y = (sy - origin[1]) / (TH / 2);
+    const x = (sx - ORIGIN[0]) / (TW / 2), y = (sy - ORIGIN[1]) / (TH / 2);
     return [(x + y) / 2, (y - x) / 2];
   };
 
+  // ---------------------------------------------------------------- pixel sprites
+  function sprite(w, h, paint) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d');
+    const img = g.createImageData(w, h);
+    const set = (x, y, rgb, a = 255) => {
+      if (x < 0 || y < 0 || x >= w || y >= h) return;
+      const k = (y * w + x) * 4;
+      img.data[k] = rgb[0]; img.data[k + 1] = rgb[1]; img.data[k + 2] = rgb[2]; img.data[k + 3] = a;
+    };
+    paint(set);
+    g.putImageData(img, 0, 0);
+    return c;
+  }
+  const rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+  // Half width of a 64 x 32 diamond on row y: 2 px wider per row, which gives a clean 2:1 edge.
+  const halfW = (y) => (y < TH / 2 ? 2 * (y + 1) : 2 * (TH - y));
+
+  // A wooden floor tile: four planks along world +X with staggered butt joints.
+  function makeTile(variant) {
+    const planks = ['#b47744', '#aa6d3b', '#b87c48', '#a66a38'].map(rgb);
+    const seam = rgb('#7c4a27'), joint = rgb('#8e5730'), edge = rgb('#93592f'), hi = rgb('#c48a52');
+    return sprite(TW, TH, (set) => {
+      for (let y = 0; y < TH; y++) {
+        const hw = halfW(y);
+        for (let x = TW / 2 - hw; x < TW / 2 + hw; x++) {
+          const sx = x + 0.5 - TW / 2, sy = y + 0.5;
+          const wx = (sx / (TW / 2) + sy / (TH / 2)) / 2, wy = (sy / (TH / 2) - sx / (TW / 2)) / 2;
+          const p = Math.min(3, Math.floor(wy * 4));
+          let col = planks[(p + variant) % 4];
+          if ((wy * 4) % 1 < 0.125) col = seam;
+          const jx = 0.3 + 0.4 * ((p + variant) % 2);
+          if (Math.abs(wx - jx) < 0.03) col = joint;
+          if (col === planks[(p + variant) % 4] && ((wy * 4) % 1 > 0.85)) col = hi;
+          set(x, y, col);
+        }
+        // the two upper edges trace the grid between neighbouring tiles
+        set(TW / 2 - hw, y, edge);
+        set(TW / 2 + hw - 1, y, edge);
+        if (y < TH / 2) { set(TW / 2 - hw + 1, y, edge); set(TW / 2 + hw - 2, y, edge); }
+      }
+    });
+  }
+
+  // Floor thickness under the two front edges of a border tile.
+  function makeEdge(side) {
+    const face = rgb(side < 0 ? '#6e4426' : '#5a361d'), line = rgb('#3e2414');
+    return sprite(TW / 2, TH / 2 + EDGE, (set) => {
+      for (let i = 0; i < TW / 2; i++) {
+        // left face runs down-right from the left corner; right face runs up-right to the right corner
+        const top = side < 0 ? Math.floor(i / 2) : TH / 2 - 1 - Math.floor(i / 2);
+        for (let k = 1; k <= EDGE; k++) set(i, top + k, k === EDGE ? line : face);
+      }
+    });
+  }
+
+  // A block standing on one tile: top diamond, two shaded side faces, dark outline.
+  function makeBlock(height, top, left, right) {
+    const w = 32, h = 16, H = height;
+    const T = rgb(top), L = rgb(left), Rt = rgb(right), O = OUTLINE;
+    const hw = (y) => (y < h / 2 ? 2 * (y + 1) : 2 * (h - y));
+    return sprite(w + 2, h + H + 2, (set) => {
+      const ox = 1, oy = 1;
+      // side faces
+      for (let x = 0; x < w; x++) {
+        const half = x < w / 2;
+        const yTop = h / 2 + (half ? Math.floor(x / 2) : Math.floor((w - 1 - x) / 2));
+        for (let y = yTop; y < yTop + H; y++) set(ox + x, oy + y, half ? L : Rt);
+      }
+      // top face
+      for (let y = 0; y < h; y++) for (let x = w / 2 - hw(y); x < w / 2 + hw(y); x++) set(ox + x, oy + y, T);
+      // outline: trace the silhouette from the alpha we just painted
+      const filled = new Set();
+      for (let x = 0; x < w; x++) {
+        const half = x < w / 2;
+        const yTop = h / 2 + (half ? Math.floor(x / 2) : Math.floor((w - 1 - x) / 2));
+        for (let y = 0; y < yTop + H; y++) {
+          const inTop = y < h && x >= w / 2 - hw(y) && x < w / 2 + hw(y);
+          if (inTop || y >= yTop) filled.add((ox + x) + ',' + (oy + y));
+        }
+      }
+      for (const key of filled) {
+        const [x, y] = key.split(',').map(Number);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          if (!filled.has((x + dx) + ',' + (y + dy))) set(x + dx, y + dy, O);
+        }
+      }
+      // the top face's front edges catch a darker line, and the front vertical corner
+      for (let x = 0; x < w; x++) {
+        const half = x < w / 2;
+        const y = h / 2 + (half ? Math.floor(x / 2) : Math.floor((w - 1 - x) / 2));
+        set(ox + x, oy + y, O);
+      }
+      for (let y = h; y < h + H; y++) set(ox + w / 2, oy + y - 1, O);
+    });
+  }
+
+  function makeShadow() {
+    const w = 24, h = 9, a = 72;
+    return sprite(w, h, (set) => {
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const nx = (x + 0.5 - w / 2) / (w / 2), ny = (y + 0.5 - h / 2) / (h / 2);
+        if (nx * nx + ny * ny <= 1) set(x, y, [20, 10, 22], a);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- setup and input
   function init(canvas) {
     cv = canvas;
+    cv.width = VIEW_W;
+    cv.height = VIEW_H;
     ctx = cv.getContext('2d');
     ctx.imageSmoothingEnabled = false;
-    origin = [cv.width / 2, (cv.height - N * TH) / 2 + 10];
+    tiles = [makeTile(0), makeTile(1), makeTile(2), makeTile(3)];
+    edges = { left: makeEdge(-1), right: makeEdge(1) };
+    props = [
+      { tx: 1, ty: 4, img: makeBlock(18, '#c08a58', '#8e5a32', '#74482a') },
+      { tx: 4, ty: 1, img: makeBlock(12, '#6e9a52', '#4a6e38', '#3c5a2e') },
+    ];
+    shadow = makeShadow();
+
     const keyName = (e) => ({ ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' }[e.code]);
     cv.addEventListener('keydown', (e) => {
       const k = keyName(e);
@@ -37,19 +165,18 @@
     cv.addEventListener('blur', () => keys.clear());
     cv.addEventListener('pointerdown', (e) => {
       const r = cv.getBoundingClientRect();
-      const sx = ((e.clientX - r.left) / r.width) * cv.width, sy = ((e.clientY - r.top) / r.height) * cv.height;
+      const sx = ((e.clientX - r.left) / r.width) * VIEW_W, sy = ((e.clientY - r.top) / r.height) * VIEW_H;
       const [wx, wy] = toWorld(sx, sy);
-      ch.target = [Math.max(0.3, Math.min(N - 0.3, wx)), Math.max(0.3, Math.min(N - 0.3, wy))];
+      ch.target = [clampW(wx), clampW(wy)];
       ch.running = e.shiftKey;
       cv.focus({ preventScroll: true });
     });
   }
+  const clampW = (v) => Math.max(0.3, Math.min(N - 0.3, v));
 
-  // nearest of the 8 facings for a screen-space vector
   function facing(sx, sy) {
     const a = Math.atan2(sy, sx);
-    const i = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8;
-    return SCREEN_ORDER[i];
+    return SCREEN_ORDER[((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8];
   }
 
   function update(dt) {
@@ -59,74 +186,37 @@
     if (kx || ky) dir = facing(kx, ky);
     else if (ch.target) {
       const dx = ch.target[0] - ch.wx, dy = ch.target[1] - ch.wy;
-      if (Math.hypot(dx, dy) < 0.08) ch.target = null;
+      if (Math.hypot(dx, dy) < 0.06) ch.target = null;
       else dir = facing((dx - dy) * TW / 2, (dx + dy) * TH / 2);
     }
     ch.moving = !!dir;
     if (!dir) return;
     ch.dir = dir;
     const v = DIRV[dir], len = Math.hypot(v[0], v[1]);
-    const speed = ch.running ? 3.4 : 1.7; // tiles per second
-    ch.wx = Math.max(0.3, Math.min(N - 0.3, ch.wx + (v[0] / len) * speed * dt));
-    ch.wy = Math.max(0.3, Math.min(N - 0.3, ch.wy + (v[1] / len) * speed * dt));
+    const speed = ch.running ? 3.2 : 1.6; // tiles per second
+    ch.wx = clampW(ch.wx + (v[0] / len) * speed * dt);
+    ch.wy = clampW(ch.wy + (v[1] / len) * speed * dt);
   }
 
-  function tile(x, y) {
-    const [sx, sy] = toScreen(x, y);
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(sx + TW / 2, sy + TH / 2);
-    ctx.lineTo(sx, sy + TH);
-    ctx.lineTo(sx - TW / 2, sy + TH / 2);
-    ctx.closePath();
-  }
-
+  // ---------------------------------------------------------------- drawing
   function drawFloor() {
     ctx.fillStyle = '#1b2236';
-    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      tile(x, y);
-      ctx.fillStyle = (x + y) % 2 ? '#b07440' : '#a66a39';
-      ctx.fill();
-      // plank seams run along world +X
       const [sx, sy] = toScreen(x, y);
-      ctx.strokeStyle = 'rgba(70,38,18,0.35)';
-      ctx.lineWidth = 1;
-      for (let k = 1; k < 4; k++) {
-        const t = k / 4;
-        ctx.beginPath();
-        ctx.moveTo(Math.round(sx - (TW / 2) * t) + 0.5, Math.round(sy + (TH / 2) * t) + 0.5);
-        ctx.lineTo(Math.round(sx - (TW / 2) * t + TW / 2) + 0.5, Math.round(sy + (TH / 2) * t + TH / 2) + 0.5);
-        ctx.stroke();
-      }
-      tile(x, y);
-      ctx.strokeStyle = 'rgba(60,32,14,0.6)';
-      ctx.stroke();
+      ctx.drawImage(tiles[(x * 3 + y * 5) % 4], sx - TW / 2, sy);
     }
-    // floor edge
-    const [ax, ay] = toScreen(0, N), [bx, by] = toScreen(N, N), [cx2, cy2] = toScreen(N, 0);
-    ctx.fillStyle = '#6e4426';
-    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(bx, by + 8); ctx.lineTo(ax, ay + 8); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#58361e';
-    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(cx2, cy2); ctx.lineTo(cx2, cy2 + 8); ctx.lineTo(bx, by + 8); ctx.closePath(); ctx.fill();
+    // thickness under the two front edges: the lower-left edges of the y = N-1 row and the
+    // lower-right edges of the x = N-1 row
+    for (let i = 0; i < N; i++) {
+      const [lx, ly] = toScreen(i, N - 1);
+      ctx.drawImage(edges.left, lx - TW / 2, ly + TH / 2);
+      const [rx, ry] = toScreen(N - 1, i);
+      ctx.drawImage(edges.right, rx, ry + TH / 2);
+    }
   }
 
-  function drawProp(p) {
-    const [sx, sy] = toScreen(p.wx, p.wy);
-    const w = 16, d = 8;
-    const top = sy - p.h;
-    ctx.fillStyle = p.c[1];
-    ctx.beginPath(); ctx.moveTo(sx - w, sy - d + 8); ctx.lineTo(sx, sy + 8); ctx.lineTo(sx, top + 8); ctx.lineTo(sx - w, top - d + 8); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = p.c[0];
-    ctx.beginPath(); ctx.moveTo(sx + w, sy - d + 8); ctx.lineTo(sx, sy + 8); ctx.lineTo(sx, top + 8); ctx.lineTo(sx + w, top - d + 8); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = p.c[2];
-    ctx.beginPath(); ctx.moveTo(sx, top + 8); ctx.lineTo(sx + w, top - d + 8); ctx.lineTo(sx, top - 2 * d + 8); ctx.lineTo(sx - w, top - d + 8); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#1d1424';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-
-  function sprite(img) {
+  function spriteOf(img) {
     let c = cache.get(img);
     if (!c) {
       c = document.createElement('canvas');
@@ -145,10 +235,15 @@
     const img = frames[anim] && frames[anim][ch.dir] && frames[anim][ch.dir][i];
     if (!img) return;
     const [sx, sy] = toScreen(ch.wx, ch.wy);
-    ctx.fillStyle = 'rgba(20,10,20,0.28)';
-    ctx.beginPath(); ctx.ellipse(Math.round(sx), Math.round(sy) + 0.5, 11, 4.5, 0, 0, Math.PI * 2); ctx.fill();
-    const pivotY = img.height - SG.FRAME.pivotFromBottom;
-    ctx.drawImage(sprite(img), Math.round(sx - img.width / 2), Math.round(sy - pivotY));
+    ctx.drawImage(shadow, sx - shadow.width / 2, sy - Math.floor(shadow.height / 2));
+    const pivotY = img.height - SG.FRAME.pivotFromBottom - 1;
+    ctx.drawImage(spriteOf(img), sx - img.width / 2, sy - pivotY);
+  }
+
+  function drawProp(p) {
+    const [sx, sy] = toScreen(p.tx, p.ty); // top corner of its tile
+    // the block's footprint is the middle of the tile: 32 x 16 centred on the tile
+    ctx.drawImage(p.img, sx - p.img.width / 2, sy + TH / 2 + 8 - p.img.height + 1);
   }
 
   function tick(dt, frames) {
@@ -156,10 +251,10 @@
     ch.clock += dt;
     update(dt);
     drawFloor();
-    const items = PROPS.map((p) => ({ z: p.wx + p.wy, draw: () => drawProp(p) }));
+    const items = props.map((p) => ({ z: p.tx + p.ty + 1, draw: () => drawProp(p) }));
     items.push({ z: ch.wx + ch.wy, draw: () => drawChar(frames) });
     items.sort((a, b) => a.z - b.z).forEach((it) => it.draw());
   }
 
-  SG.iso = { init, tick };
+  SG.iso = { init, tick, size: [VIEW_W, VIEW_H] };
 })();

@@ -163,6 +163,7 @@
     const ms = Math.round(performance.now() - t0);
     $('preview').width = fw; $('preview').height = fh;
     stripCanvases.forEach((c) => { c.width = fw; c.height = fh; });
+    fitAll();
     persist();
     $('sheet-stats').dataset.ms = ms;
   }
@@ -186,7 +187,6 @@
     });
     const img = $('sheet-img');
     img.src = sheet.canvas.toDataURL('image/png');
-    img.style.maxWidth = `${Math.max(sheet.canvas.width, 1) * Math.max(1, Math.floor(2 / Number(state.exp.scale)))}px`;
     const count = Object.keys(sheet.meta.frames).length;
     $('sheet-stats').textContent = `${sheet.canvas.width} × ${sheet.canvas.height} px · ${count} frames · ${sheet.cols} × ${sheet.rows}`;
   }
@@ -436,9 +436,42 @@
           $(t2).setAttribute('aria-selected', String(t2 === t));
           $(v2).hidden = v2 !== v;
         }
+        fitAll();
         if (v === 'view-iso') $('iso').focus({ preventScroll: true });
       });
     }
+  }
+
+  // ---------------------------------------------------------------- pixel-perfect display
+  // Pixel art only stays crisp at whole-number scales of the screen's real pixels, so every
+  // canvas and the sheet image get sized to the largest integer multiple that fits.
+  function fitPixels(el, w, h, availW, availH) {
+    if (!w || !h) return 1;
+    const dpr = window.devicePixelRatio || 1;
+    let k = Math.floor(Math.min((availW * dpr) / w, availH ? (availH * dpr) / h : Infinity));
+    if (!(k >= 1)) k = 1;
+    el.style.width = `${(w * k) / dpr}px`;
+    el.style.height = `${(h * k) / dpr}px`;
+    return k;
+  }
+
+  function fitAll() {
+    const [fw, fh] = frameSize();
+    const box = document.querySelector('.preview-box');
+    if (box && box.offsetParent !== null) fitPixels($('preview'), fw, fh, box.clientWidth - 24, Math.max(box.clientHeight, 360) - 24);
+    const strip = $('strip');
+    if (strip.offsetParent !== null) {
+      for (const c of stripCanvases) {
+        const cell = c.parentElement.clientWidth - 4;
+        fitPixels(c, fw, fh, cell, 0);
+      }
+    }
+    const img = $('sheet-img');
+    const view = $('sheet-view');
+    if (img.naturalWidth) fitPixels(img, img.naturalWidth, img.naturalHeight, view.clientWidth - 14, 0);
+    const iso = $('iso');
+    const isoBox = document.querySelector('.iso-box');
+    if (isoBox && isoBox.offsetParent !== null) fitPixels(iso, SG.iso.size[0], SG.iso.size[1], isoBox.clientWidth - 2, 0);
   }
 
   // ---------------------------------------------------------------- boot
@@ -455,6 +488,13 @@
   syncView();
   SG.iso && SG.iso.init($('iso'));
   renderNow();
+  $('sheet-img').addEventListener('load', fitAll);
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => fitAll());
+    for (const el of [document.querySelector('.preview-box'), $('strip'), $('sheet-view'), document.querySelector('.iso-box')]) if (el) ro.observe(el);
+  }
+  window.addEventListener('resize', fitAll);
+  fitAll();
   requestAnimationFrame(tick);
 
   SG.ui = { state, renderNow };
