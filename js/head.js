@@ -276,13 +276,14 @@
   // inner (nose side) then outer, so both eyes mirror cleanly. k = dark, i = iris,
   // w = white glint, s = lid shadow, . = skin. `at` is the first box row the template uses.
   const EYES = {
-    default: { rows: ['kk', 'wk', 'ik', 'ii'] },
-    round: { rows: ['kk', 'kw', 'ki', 'kk'] },
+    default: { rows: ['k', 'i'], at: 1 }, // small and calm, like the in-game sprites
+    sparkly: { rows: ['kk', 'iw', 'ii'], at: 1 }, // lash, iris and a glint
+    big: { rows: ['kk', 'wk', 'ik', 'ii'] }, // big anime eyes
     happy: { rows: ['kk', 'k.'], at: 1, wide: true },
-    sleepy: { rows: ['ss', 'kk', 'ii'], at: 1 },
+    sleepy: { rows: ['ss', 'kk'], at: 1 },
     closed: { rows: ['kk'], at: 2 },
-    stern: { rows: ['kk', 'ik', 'ii'], at: 1 },
-    beady: { rows: ['k', 'k'], at: 1 },
+    stern: { rows: ['kk', 'i.'], at: 1 },
+    beady: { rows: ['k'], at: 2 },
   };
   const BROWS = { normal: [0, 0], soft: [0, 1], thick: [0, 0], angry: [1, 0], worried: [0, 1] };
 
@@ -339,7 +340,7 @@
     const dark = mix(skin[3], R.style.color, 0.82);
     const iris = mix(hex(cfg.eyeColor), dark, 0.15);
     const white = hex('#fffaf4');
-    const browCol = mix(R.ramps.hair[3], R.style.color, 0.3);
+    const browCol = mix(R.ramps.hair[2], R.style.color, 0.2); // softer than the outline
     const tpl = EYES[cfg.eyes] || EYES.default;
     const glasses = cfg.glasses && cfg.glasses !== 'none';
     const onFace = (x, y) => R.faceMask.hasD(x, y);
@@ -412,7 +413,7 @@
         neutral: ['mm'],
         smile: ['m..m', '.mm.'],
         open: ['mmmm', '.rr.', '..'],
-        grin: ['mmmm', 'mwwm', '.mm.'],
+        grin: ['m..m', '.rr.'],
         frown: ['.mm.', 'm..m'],
         smirk: ['...m', '.mm.'],
       };

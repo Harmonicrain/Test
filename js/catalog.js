@@ -27,7 +27,7 @@
     {
       name: 'Face',
       items: [
-        { key: 'eyes', label: 'Eyes', type: 'select', options: ['default', 'round', 'happy', 'sleepy', 'closed', 'stern', 'beady'] },
+        { key: 'eyes', label: 'Eyes', type: 'select', options: ['default', 'sparkly', 'big', 'happy', 'sleepy', 'closed', 'stern', 'beady'] },
         { key: 'eyeColor', label: 'Eye colour', type: 'color', palette: 'eyes' },
         { key: 'brows', label: 'Brows', type: 'select', options: ['normal', 'soft', 'thick', 'angry', 'worried', 'none'] },
         { key: 'nose', label: 'Nose', type: 'select', options: ['dot', 'none'] },
@@ -92,7 +92,7 @@
     badge: 'Gold name badge', headscarf: 'Headscarf', plant: 'Potted plant', camera: 'Camera', mic: 'Microphone', wrench: 'Wrench', record: 'Vinyl record', clipboard: 'Clipboard', coffee: 'Coffee cup', phone: 'Phone', book: 'Book',
     backpack: 'Backpack', cape: 'Cape', selout: 'Selective', black: 'Black', colored: 'Coloured',
     slim: 'Slim', average: 'Average', broad: 'Broad', heavy: 'Heavy', straight: 'Straight', curvy: 'Curvy', tall: 'Tall',
-    default: 'Default', happy: 'Happy (closed)', sleepy: 'Sleepy', closed: 'Closed', stern: 'Stern', beady: 'Beady',
+    default: 'Soft', sparkly: 'Sparkly', big: 'Big', happy: 'Happy (closed)', sleepy: 'Sleepy', closed: 'Closed', stern: 'Stern', beady: 'Beady',
     normal: 'Normal', soft: 'Soft', thick: 'Thick', angry: 'Angry', worried: 'Worried', dot: 'Dot', neutral: 'Neutral', smile: 'Smile',
     open: 'Open smile', grin: 'Grin', frown: 'Frown', smirk: 'Smirk', natural: 'Natural', red: 'Red', pink: 'Pink', plum: 'Plum',
     blush: 'Blush', freckles: 'Freckles', stubble: 'Stubble', mustache: 'Mustache', goatee: 'Goatee', beard: 'Full beard',
@@ -146,7 +146,7 @@
       shoeColor: '#1e1e24',
     }),
     'Kit Voss': P('kit-voss', {
-      build: 'slim', figure: 'curvy', skin: '#f6cfae', eyes: 'round', eyeColor: '#7a3a8a', mouth: 'open', lips: 'pink',
+      build: 'slim', figure: 'curvy', skin: '#f6cfae', eyes: 'sparkly', eyeColor: '#7a3a8a', mouth: 'open', lips: 'pink',
       hair: 'pigtails', hairColor: '#e04a8a', top: 'jacket', topColor: '#2a2a34', top2Color: '#e07a9a', bottom: 'skirt',
       bottomColor: '#2a2a34', shoes: 'boots', shoeColor: '#1e1e24', earrings: 'hoops', earringColor: '#c8ccd4',
     }),
@@ -166,7 +166,7 @@
       shoeColor: '#1e1e24', badge: 'badge',
     }),
     'Rafi Mercer': P('rafi-mercer', {
-      skin: '#5a301c', eyes: 'happy', mouth: 'grin', hair: 'short', hairColor: '#1c1418', hat: 'beanie', hatColor: '#2a2a34',
+      skin: '#8a5232', eyes: 'happy', mouth: 'grin', hair: 'short', hairColor: '#1c1418', hat: 'beanie', hatColor: '#2a2a34',
       top: 'hoodie', topColor: '#2a2a34', top2Color: '#a8a8b2', bottom: 'jeans', bottomColor: '#3a3238', shoes: 'sneakers',
       shoeColor: '#efede8', held: 'record',
     }),
@@ -231,7 +231,7 @@
       shoes: 'boots', shoeColor: '#1e1e24', earrings: 'studs', held: 'mic',
     }),
     'Sonny Glass': P('sonny-glass', {
-      build: 'broad', skin: '#5a301c', eyes: 'happy', mouth: 'grin', hair: 'short', hairColor: '#1c1418', facialHair: 'beard',
+      build: 'broad', skin: '#7a4428', eyes: 'happy', mouth: 'grin', hair: 'short', hairColor: '#1c1418', facialHair: 'beard',
       top: 'hoodie', topColor: '#c8383c', top2Color: '#f4f2ee', bottom: 'shorts', bottomColor: '#2a2a34', shoes: 'sneakers',
       shoeColor: '#efede8',
     }),
