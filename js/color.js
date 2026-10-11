@@ -80,8 +80,8 @@
     const out = [
       mk(hueToward(h, 55, 9 * k), s + 0.03 * k, l + 0.11),
       pack(r, g, b),
-      mk(hueToward(h, 250, 10 * k), s + 0.06 * k, l - Math.max(0.07, 0.2 * l)),
-      mk(hueToward(h, 255, 20 * k), s + 0.04 * k, l - Math.max(0.12, 0.42 * l)),
+      mk(hueToward(h, 250, 8 * k), s + 0.01 * k, l - Math.max(0.07, 0.2 * l)),
+      mk(hueToward(h, 255, 16 * k), s - 0.02 * k, l - Math.max(0.12, 0.42 * l)),
     ];
     rampCache.set(key, out);
     return out;
