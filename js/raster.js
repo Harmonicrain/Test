@@ -262,7 +262,8 @@
 
       const mode = o.outline || 'full';
       if (mode === 'none' || this.style.mode === 'none') return;
-      const outer = this.outerColor(ramp), inner = this.innerColor(ramp);
+      // softInner: where a limb crosses the body, draw the seam in the part's own deep tone
+      const outer = this.outerColor(ramp), inner = o.softInner && this.style.mode !== 'black' ? ramp[3] : this.innerColor(ramp);
       for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
         const i = y * w + x;
         if (m.d[i]) continue;

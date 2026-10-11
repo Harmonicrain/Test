@@ -58,31 +58,32 @@
       face: { cx: hcx, cy: hcy, rx: 8, ry: 8.2 }, ramps, style, carrying,
     };
 
-    // arms: index 0 = character's right
+    // arms: index 0 = character's right. Each arm grows out of the shoulder, drifts out at the
+    // elbow and comes back in toward the hip, like a relaxed arm rather than a straight tube.
     R.arms = [1, -1].map((r, i) => {
       const out = -c * r; // screen-x direction away from the body
-      // arms hang just outside the torso; in 3/4 views the far arm tucks half behind it
-      const reach = r * s < -0.3 ? hw + b.aw / 2 - 1.6 : hw + b.aw / 2 + 0.2;
-      const shx = cx + s * lean * 0.6 + Math.sign(out) * reach;
-      const shy = sy + 2.5;
+      const side = Math.sign(out);
+      const reach = r * s < -0.3 ? hw - 1.8 : hw + 0.3; // the far arm in 3/4 views tucks behind
+      const shx = cx + s * lean * 0.6 + side * reach;
+      const shy = sy + 2.4;
       if (carrying && i === 0) {
         // carry pose: elbow tucked, forearm forward across the chest
-        const ex = shx + out * 0.5 - s * 0.6, ey = sy + 7.5;
-        const wx = cx + s * (hw + 1) - c * r * 1, wy = sy + 9 + c * 0.5;
+        const ex = shx + side * 0.6 - s * 0.5, ey = sy + 7.2;
+        const wx = cx + s * (hw + 0.5) - c * r * 0.8, wy = sy + 9 + c * 0.5;
         return { r, out, depth: r * s, carry: true, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.4, wy + 0.4] };
       }
       const sw = (pose.arms && pose.arms[i]) || 0;
-      const ex = shx + out * 0.5 + s * sw * 0.45, ey = sy + 7.5 + c * sw * 0.2;
-      const wx = shx + out * 0.8 + s * sw, wy = sy + 12.2 + c * sw * 0.5 - Math.abs(sw) * 0.35;
-      return { r, out, depth: r * s, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.5, wy + 1.8] };
+      const ex = shx + side * 1.2 + s * sw * 0.45, ey = sy + 8.2 + c * sw * 0.2;
+      const wx = shx + side * 1.0 + s * sw, wy = sy + 14.4 + c * sw * 0.5 - Math.abs(sw) * 0.35;
+      return { r, out, depth: r * s, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.4, wy + 1.4] };
     });
 
     // legs: feet step along the facing direction, in depth as well as sideways
     R.legs = [1, -1].map((r, i) => {
       const L = (pose.legs && pose.legs[i]) || { st: 0, lift: 0 };
       const lift = L.lift || 0;
-      const hipX = cx - c * r * (b.lw / 2);
-      const fx = hipX - c * r * 1.2 + s * L.st;
+      const hipX = cx - c * r * (b.lw / 2 + 0.2);
+      const fx = hipX - c * r * 0.6 + s * L.st;
       const fy = ground + Math.round(c * L.st * 0.5) - Math.round(lift);
       const ankle = [fx, fy - 3];
       const hip = [hipX, hipY - 1];
@@ -96,7 +97,7 @@
   // ---------------------------------------------------------------- legs & feet
   function legMask(fr, R, leg, grow = 0) {
     const { lw } = R.b;
-    return fr.mask().stroke([leg.hip, leg.knee, leg.ankle], [lw / 2 + grow, lw / 2 - 0.5 + grow]);
+    return fr.mask().stroke([leg.hip, leg.knee, leg.ankle], [lw / 2 + grow, lw / 2 - 0.7 + grow]);
   }
 
   function drawLeg(fr, R, leg) {
@@ -170,19 +171,19 @@
     const belly = R.b.belly || 0;
     const top = sy;
     const chest = curvy ? s * 1 : 0;
-    const wW = hw - (curvy ? 1.4 : 0.8) + belly;
-    const hipW = hw - 0.4 + (curvy ? 0.6 : 0) + flare;
+    const wW = hw - (curvy ? 1.6 : 1.1) + belly;
+    const hipW = hw - 0.4 + (curvy ? 0.7 : 0) + flare;
     const hem = R.hipY + 1 + hemExtra;
     const lx = cx + s * (R.pose.lean || 0) * 0.5;
     return [
-      [lx - hw + 2.2, top], [lx + hw - 2.2, top], [lx + hw - 0.4, top + 1.4], [lx + hw, top + 3],
-      [lx + hw - 0.2 + chest, top + 6.5], [cx + wW + belly * s, top + 10.5], [cx + hipW, hem], [cx - hipW, hem],
-      [cx - wW - belly * s * 0.3, top + 10.5], [lx - hw + 0.2, top + 6.5], [lx - hw, top + 3], [lx - hw + 0.4, top + 1.4],
+      [lx - hw + 2.6, top], [lx + hw - 2.6, top], [lx + hw - 0.6, top + 1.4], [lx + hw, top + 3.2],
+      [lx + hw - 0.3 + chest, top + 6.5], [cx + wW + belly * s, top + 10], [cx + hipW, hem], [cx - hipW, hem],
+      [cx - wW - belly * s * 0.3, top + 10], [lx - hw + 0.3, top + 6.5], [lx - hw, top + 3.2], [lx - hw + 0.6, top + 1.4],
     ];
   }
 
   function drawNeck(fr, R) {
-    const nw = Math.abs(R.c) > 0.5 ? 5 : 4;
+    const nw = Math.abs(R.c) > 0.5 ? 4 : 3;
     const x = Math.round(R.hcx - nw / 2 + R.s * 0.6);
     const y0 = R.hcy + 4;
     const m = fr.mask().rect(x, y0, nw, R.sy - y0 + 3);
@@ -375,11 +376,11 @@
     const pts = backCarry ? [arm.sh, arm.el] : [arm.sh, arm.el, arm.wr];
     const sleeveRamp = def.shirtFromTrim ? R.ramps.top2 : R.ramps.top;
     if (def.sleeve !== 'long') {
-      fr.draw(fr.mask().stroke(pts, [r, r * 0.85]), { ramp: R.ramps.skin, shade: 'cyl', dim, outline: 'full', tag: TAG.skin, th: [0.9, 0.2, -0.6] });
+      fr.draw(fr.mask().stroke(pts, [r, r * 0.8]), { ramp: R.ramps.skin, shade: 'cyl', dim, outline: 'full', tag: TAG.skin, th: [0.9, 0.2, -0.6] });
     }
     if (def.sleeve !== 'none') {
       const end = def.sleeve === 'short' ? arm.sh[1] + 5.5 : (backCarry ? arm.el[1] + 3 : arm.wr[1] + 0.8);
-      const rr = def.wide ? [r + 0.3, r + 1.6] : [r + 0.2, r];
+      const rr = def.wide ? [r + 0.3, r + 1.6] : [r + 0.25, r * 0.85];
       const m = fr.mask().stroke(pts, rr).clipY(0, Math.round(end));
       fr.draw(m, { ramp: sleeveRamp, shade: 'cyl', dim, outline: 'full', tag: TAG.cloth, th: CLOTH_TH });
       const endRow = Math.round(end) - 1;
@@ -396,8 +397,8 @@
     }
     if (backCarry) return;
     const [hx, hy] = arm.hand;
-    const he = { cx: hx, cy: hy, rx: 2.3, ry: 2.3 };
-    fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], dim, outline: 'full', tag: TAG.skin });
+    const he = { cx: hx, cy: hy, rx: 1.6, ry: 1.9 };
+    fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], dim, outline: 'full', softInner: true, tag: TAG.skin });
   }
 
   // ---------------------------------------------------------------- held items
@@ -545,8 +546,8 @@
         drawArm(fr, R, a);
         drawHeld(fr, R, a);
         const [hx, hy] = a.hand;
-        const he = { cx: hx, cy: hy, rx: 2.3, ry: 2.3 };
-        fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], outline: 'full', tag: TAG.skin });
+        const he = { cx: hx, cy: hy, rx: 1.6, ry: 1.9 };
+        fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], outline: 'full', softInner: true, tag: TAG.skin });
       } else drawArm(fr, R, a);
     }
     run('overBack');

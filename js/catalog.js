@@ -255,10 +255,10 @@
   const DEFAULT = PRESETS['Mara Finch'];
 
   const BUILDS = {
-    slim: { bw: 5, lw: 5, aw: 3.6 },
-    average: { bw: 6, lw: 5, aw: 3.8 },
-    broad: { bw: 7, lw: 6, aw: 4.2 },
-    heavy: { bw: 7, lw: 6, aw: 4.2, belly: 1.5 },
+    slim: { bw: 4, lw: 4, aw: 2.6 },
+    average: { bw: 5, lw: 4.4, aw: 2.9 },
+    broad: { bw: 6, lw: 5, aw: 3.3 },
+    heavy: { bw: 6, lw: 5.2, aw: 3.4, belly: 1.6 },
   };
   const HEIGHTS = { short: -3, average: 0, tall: 3 };
 
