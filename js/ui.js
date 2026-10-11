@@ -320,7 +320,26 @@
     schedule();
   }
 
-  function download(blob, name) {
+  // When the editor runs inside the claude.ai viewer, saves go through its downloads
+  // capability (the viewer confirms each file). Opened locally, a normal download link works.
+  let downloadsApi = null;
+  const inViewer = !!(window.claude && typeof window.claude.use === 'function');
+  if (inViewer) window.claude.use('downloads').then((ns) => { downloadsApi = ns; }, () => {});
+
+  function download(blob, name, done) {
+    if (downloadsApi) {
+      downloadsApi.save({ filename: name, data: blob }).then(
+        () => done && done(),
+        (err) => {
+          const code = err && err.code;
+          if (code === 'declined') toast('Save cancelled');
+          else if (code === 'rate_limited') toast('A save prompt is already open');
+          else toast('Saving is not available here. Right-click the sheet image to save it.');
+        },
+      );
+      return;
+    }
+    if (inViewer) { toast('Saving is not available here. Right-click the sheet image to save it.'); return; }
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -329,14 +348,14 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
+    done && done();
   }
   const fileBase = () => (state.cfg.name || 'character').replace(/[^a-z0-9_-]+/gi, '-').toLowerCase();
 
   function wireTopBar() {
     $('randomize').addEventListener('click', randomize);
     $('save-preset').addEventListener('click', () => {
-      download(new Blob([JSON.stringify(state.cfg, null, 2)], { type: 'application/json' }), `${fileBase()}.character.json`);
-      toast('Saved character file');
+      download(new Blob([JSON.stringify(state.cfg, null, 2)], { type: 'application/json' }), `${fileBase()}.character.json`, () => toast('Saved character file'));
     });
     $('load-preset').addEventListener('change', (e) => {
       const f = e.target.files && e.target.files[0];
@@ -387,13 +406,12 @@
     }
     $('dl-png').addEventListener('click', () => {
       if (!sheet) return toast('Pick at least one animation first');
-      sheet.canvas.toBlob((b) => { download(b, `${fileBase()}_sheet.png`); toast('Downloaded sprite sheet PNG'); }, 'image/png');
+      sheet.canvas.toBlob((b) => download(b, `${fileBase()}_sheet.png`, () => toast('Saved sprite sheet PNG')), 'image/png');
     });
     $('dl-json').addEventListener('click', () => {
       if (!sheet) return toast('Pick at least one animation first');
       sheet.meta.meta.image = `${fileBase()}_sheet.png`;
-      download(new Blob([JSON.stringify(sheet.meta, null, 2)], { type: 'application/json' }), `${fileBase()}_sheet.json`);
-      toast('Downloaded atlas JSON');
+      download(new Blob([JSON.stringify(sheet.meta, null, 2)], { type: 'application/json' }), `${fileBase()}_sheet.json`, () => toast('Saved atlas JSON'));
     });
     $('copy-json').addEventListener('click', () => {
       if (!sheet) return toast('Pick at least one animation first');

@@ -62,6 +62,11 @@ Godot 4: import the PNG, then build `SpriteFrames` from the frame rectangles in 
 (each rectangle is `frames[name].frame`). Set the sprite offset so the pivot lands on the
 character's tile position.
 
+### Example
+
+`examples/mara-finch_sheet.png` and `examples/mara-finch_sheet.json` are Mara Finch exported
+with the default settings (idle, walk and run, 1×, row per direction).
+
 ## Options
 
 - **Body**: build, figure, height, skin tone
