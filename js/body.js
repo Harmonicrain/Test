@@ -44,7 +44,8 @@
     const sy = hipY - 14 + breath;
     const hcx = cx + s * lean;
     const hcy = sy - 11;
-    const hw = Math.round(b.bw * (0.7 + 0.3 * Math.abs(c)));
+    // a turned torso keeps its front width in 3/4 views and only slims in profile
+    const hw = Math.round(b.bw * (1 - 0.3 * s ** 4));
     const carrying = cfg.held && cfg.held !== 'none';
 
     const ramps = {
@@ -60,7 +61,9 @@
     // arms: index 0 = character's right
     R.arms = [1, -1].map((r, i) => {
       const out = -c * r; // screen-x direction away from the body
-      const shx = cx + s * lean * 0.6 + out * (hw + b.aw / 2 + 0.2);
+      // arms hang just outside the torso; in 3/4 views the far arm tucks half behind it
+      const reach = r * s < -0.3 ? hw + b.aw / 2 - 1.6 : hw + b.aw / 2 + 0.2;
+      const shx = cx + s * lean * 0.6 + Math.sign(out) * reach;
       const shy = sy + 2.5;
       if (carrying && i === 0) {
         // carry pose: elbow tucked, forearm forward across the chest
@@ -366,18 +369,23 @@
     const def = TOPS[R.cfg.top] || TOPS.tshirt;
     const r = R.b.aw / 2;
     const dim = arm.depth < -0.3 ? 1 : 0;
-    const pts = [arm.sh, arm.el, arm.wr];
+    // seen from behind, a carrying arm shows only the upper arm and elbow: the forearm,
+    // hand and item are in front of the body
+    const backCarry = arm.carry && R.c < -0.1;
+    const pts = backCarry ? [arm.sh, arm.el] : [arm.sh, arm.el, arm.wr];
     const sleeveRamp = def.shirtFromTrim ? R.ramps.top2 : R.ramps.top;
     if (def.sleeve !== 'long') {
       fr.draw(fr.mask().stroke(pts, [r, r * 0.85]), { ramp: R.ramps.skin, shade: 'cyl', dim, outline: 'full', tag: TAG.skin, th: [0.9, 0.2, -0.6] });
     }
     if (def.sleeve !== 'none') {
-      const end = def.sleeve === 'short' ? arm.sh[1] + 5.5 : arm.wr[1] + 0.8;
+      const end = def.sleeve === 'short' ? arm.sh[1] + 5.5 : (backCarry ? arm.el[1] + 3 : arm.wr[1] + 0.8);
       const rr = def.wide ? [r + 0.3, r + 1.6] : [r + 0.2, r];
       const m = fr.mask().stroke(pts, rr).clipY(0, Math.round(end));
       fr.draw(m, { ramp: sleeveRamp, shade: 'cyl', dim, outline: 'full', tag: TAG.cloth, th: CLOTH_TH });
       const endRow = Math.round(end) - 1;
-      if (def.cuffs && def.sleeve === 'long') {
+      if (backCarry) {
+        // no cuff: the sleeve continues forward out of sight
+      } else if (def.cuffs && def.sleeve === 'long') {
         // a sliver of shirt cuff at the wrist
         fr.draw(m.clone().clipY(endRow, endRow + 1), { ramp: R.ramps.top2, shade: 'flat', flat: 1 + dim, outline: 'none', tag: TAG.cloth });
       } else if (def.band && def.sleeve === 'long') {
@@ -386,6 +394,7 @@
         fr.draw(m.clone().clipY(endRow, endRow + 1), { ramp: sleeveRamp, shade: 'flat', flat: 2 + dim, outline: 'none', tag: TAG.cloth });
       }
     }
+    if (backCarry) return;
     const [hx, hy] = arm.hand;
     const he = { cx: hx, cy: hy, rx: 2.3, ry: 2.3 };
     fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], dim, outline: 'full', tag: TAG.skin });
@@ -493,12 +502,11 @@
     const extras = SG.head.hairExtras(R).concat(backItems(R));
     const run = (layer) => extras.filter((x) => x.layer === layer).forEach((x) => x.draw(fr));
     const carryArm = R.arms.find((a) => a.carry);
-    const heldBehind = carryArm && R.c < -0.1;
+    const heldBehind = carryArm && R.c < -0.1; // the item is hidden by the body
 
     run('behind');
-    const farArms = R.arms.filter((a) => a.depth < -0.3 || (a.carry && R.c < -0.1));
+    const farArms = R.arms.filter((a) => a.depth < -0.3);
     const otherArms = R.arms.filter((a) => !farArms.includes(a));
-    if (heldBehind) drawHeld(fr, R, carryArm);
     farArms.forEach((a) => drawArm(fr, R, a));
     const legs = R.legs.slice().sort((a, b) => a.depth - b.depth);
     for (const leg of legs) { drawLeg(fr, R, leg); drawShoe(fr, R, leg); }

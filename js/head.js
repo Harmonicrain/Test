@@ -225,7 +225,7 @@
         // coiled tendrils that frame the face, temple to jaw
         for (const side of [1, -1]) {
           const p = proj(R, R.face, -0.12, side * 0.98, 0.25);
-          if (p.z < 0.3) continue;
+          if (p.z < 0.3 || R.c < -0.1) continue; // from behind, the cheek and ear show instead
           const d = Math.sign(p.x - R.face.cx) || side;
           const x = p.x + d * 0.6, y = p.y;
           const len = side > 0 ? 10 : 8; // longer on her right, like the portrait
@@ -295,7 +295,10 @@
       const jaw = dyn > 0 ? dyn : 0;
       const k = 1 - (0.3 + 0.35 * Math.max(0, -R.c)) * jaw * jaw;
       const dx = px - e.cx - s * 1.1 * jaw * jaw;
-      if (R.c < -0.1 && dyn > 0.45 && Math.abs(dx) > 3) return false; // back view: only the neck below the skull
+      // from behind only the neck shows below the skull, except the cheek and jaw on the
+      // side turned toward the camera in a 3/4 back view
+      const nearCheek = R.Rv.z > 0.3 && dx * R.Rv.x > 0;
+      if (R.c < -0.1 && dyn > 0.45 && Math.abs(dx) > 3 && !nearCheek) return false;
       return Math.abs(dx / (e.rx * k)) ** 2.2 + Math.abs(dyn) ** 2.2 <= 1;
     });
     return m;
@@ -483,9 +486,10 @@
     const st = HAIR[R.cfg.hair];
     const vol = st ? Math.max(1, Math.min(st.vol, 1.8)) : 0.7;
     const e = { cx: R.hcx, cy: R.hcy - 1 - (st && st.dy ? Math.min(st.dy, 0.5) : 0), rx: R.face.rx + 0.6 + vol, ry: R.face.ry + 0.4 + vol * 0.9 };
-    const crown = (cut, grow = 0) => {
+    // a hat sits lower at the back of the head than at the front
+    const crown = (cut, grow = 0, tilt = 0) => {
       const eb = { ...e, rx: e.rx + grow, ry: e.ry + grow };
-      return { eb, m: fr.mask().fill(eb.cx - eb.rx - 1, eb.cy - eb.ry - 1, eb.cx + eb.rx + 1, eb.cy + eb.ry, (px, py) => { const l = local(R, eb, px, py); return !!l && l.u > cut; }) };
+      return { eb, m: fr.mask().fill(eb.cx - eb.rx - 1, eb.cy - eb.ry - 1, eb.cx + eb.rx + 1, eb.cy + eb.ry, (px, py) => { const l = local(R, eb, px, py); return !!l && l.u > cut + tilt * l.f; }) };
     };
     const disc = (radF, radR, u, f0 = 0) => {
       const pts = [];
@@ -509,7 +513,7 @@
       };
       const behind = R.c < -0.2;
       if (phase === 'before') { if (behind) brim(); return; }
-      const { m } = crown(0.4);
+      const { m } = crown(0.3, 0, 0.32);
       fr.draw(m, { ramp: hr, shade: 'sphere', ell: e, outline: 'full', tag: TAG.cloth,
         tone: (sx, sy, t) => { const l = local(R, e, designX(R, sx) + 0.5, sy + 0.5); return l && Math.abs(l.r) < 0.06 && l.f > 0 ? t + 1 : t; } });
       const btn = proj(R, e, 0, 0, 1);
@@ -517,7 +521,7 @@
       if (!behind) brim();
     } else if (kind === 'beanie') {
       if (phase === 'before') return;
-      const { eb, m } = crown(0.04, 0.4);
+      const { eb, m } = crown(-0.04, 0.4, 0.1);
       fr.draw(m, { ramp: hr, shade: 'sphere', ell: eb, outline: 'full', tag: TAG.cloth,
         tone: (sx, sy, t) => {
           const l = local(R, eb, designX(R, sx) + 0.5, sy + 0.5);
