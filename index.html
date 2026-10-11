@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sprite Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Silkscreen&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">Sprite Forge</span>
+      <span class="brand-sub">8-direction character sheets</span>
+    </div>
+    <div class="bar-actions">
+      <label class="field-inline" for="preset">
+        <span>Preset</span>
+        <select id="preset"></select>
+      </label>
+      <button id="randomize" class="btn" type="button" title="Randomise every unlocked option">Randomise</button>
+      <button id="save-preset" class="btn" type="button">Save character</button>
+      <label class="btn" for="load-preset">Load character<input id="load-preset" type="file" accept=".json,application/json" hidden></label>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel controls" aria-label="Character options">
+      <div class="name-row">
+        <label for="char-name">Name</label>
+        <input id="char-name" type="text" spellcheck="false" autocomplete="off">
+      </div>
+      <div id="groups"></div>
+    </aside>
+
+    <section class="panel stage" aria-label="Preview">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-preview" class="tab" aria-selected="true" aria-controls="view-preview" type="button">Preview</button>
+        <button role="tab" id="tab-iso" class="tab" aria-selected="false" aria-controls="view-iso" type="button">Iso test floor</button>
+      </div>
+
+      <div id="view-preview" role="tabpanel" aria-labelledby="tab-preview" class="view">
+        <div class="preview-wrap">
+          <div class="preview-box checker">
+            <canvas id="preview" width="32" height="48" aria-label="Animated character preview"></canvas>
+          </div>
+          <div class="preview-side">
+            <div class="ctl-block">
+              <span class="eyebrow">Animation</span>
+              <div class="seg" id="anim-seg" role="radiogroup" aria-label="Animation"></div>
+            </div>
+            <div class="ctl-block">
+              <span class="eyebrow">Facing</span>
+              <div class="compass" id="compass" role="radiogroup" aria-label="Facing direction"></div>
+            </div>
+            <div class="ctl-block">
+              <span class="eyebrow">Playback</span>
+              <div class="play-row">
+                <button id="play" class="btn btn-small" type="button" aria-pressed="true">Pause</button>
+                <label class="field-inline small" for="speed">
+                  <span>Speed</span>
+                  <input id="speed" type="range" min="0.25" max="2" step="0.25" value="1">
+                  <output id="speed-out" for="speed">1×</output>
+                </label>
+              </div>
+              <p class="readout" id="frame-readout">idle · S · frame 1/4</p>
+            </div>
+          </div>
+        </div>
+        <div class="strip-head">
+          <span class="eyebrow">All directions</span>
+        </div>
+        <div class="strip checker" id="strip"></div>
+      </div>
+
+      <div id="view-iso" role="tabpanel" aria-labelledby="tab-iso" class="view" hidden>
+        <div class="iso-box">
+          <canvas id="iso" width="384" height="240" tabindex="0" aria-label="Isometric test floor. Use WASD or arrow keys to walk, Shift to run, or tap a tile."></canvas>
+        </div>
+        <p class="hint">Walk with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrow keys, hold <kbd>Shift</kbd> to run, or tap a tile to walk there.</p>
+      </div>
+    </section>
+
+    <aside class="panel sheet-panel" aria-label="Sprite sheet">
+      <div class="sheet-head">
+        <h2>Sprite sheet</h2>
+        <p class="readout" id="sheet-stats"></p>
+      </div>
+      <div class="sheet-view checker" id="sheet-view">
+        <img id="sheet-img" alt="Generated sprite sheet">
+      </div>
+      <p class="hint">Right-click the sheet to save it, or use the buttons below.</p>
+
+      <div class="export-grid">
+        <label for="opt-frame">Frame size
+          <select id="opt-frame">
+            <option value="32x48">32 × 48</option>
+            <option value="32x56">32 × 56</option>
+            <option value="48x64">48 × 64</option>
+            <option value="64x64">64 × 64</option>
+          </select>
+        </label>
+        <label for="opt-scale">Scale
+          <select id="opt-scale">
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+            <option value="3">3×</option>
+            <option value="4">4×</option>
+          </select>
+        </label>
+        <label for="opt-layout">Layout
+          <select id="opt-layout">
+            <option value="dir-rows">Row per direction</option>
+            <option value="anim-rows">Row per animation + direction</option>
+          </select>
+        </label>
+        <label for="opt-pad">Padding
+          <select id="opt-pad">
+            <option value="0">None</option>
+            <option value="1">1 px</option>
+            <option value="2">2 px</option>
+          </select>
+        </label>
+        <label class="span2" for="opt-order">Direction order
+          <select id="opt-order"></select>
+        </label>
+        <fieldset class="span2 anim-checks">
+          <legend>Animations</legend>
+          <div id="anim-checks"></div>
+        </fieldset>
+      </div>
+
+      <div class="export-actions">
+        <button id="dl-png" class="btn btn-primary" type="button">Download PNG</button>
+        <button id="dl-json" class="btn" type="button">Download atlas JSON</button>
+        <button id="copy-json" class="btn btn-ghost" type="button">Copy JSON</button>
+      </div>
+      <p class="toast" id="toast" role="status" aria-live="polite"></p>
+    </aside>
+  </main>
+</div>
+
+<script src="js/color.js"></script>
+<script src="js/raster.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/head.js"></script>
+<script src="js/body.js"></script>
+<script src="js/sheet.js"></script>
+<script src="js/iso.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

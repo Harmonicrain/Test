@@ -87,5 +87,22 @@
     return out;
   }
 
-  SG.color = { clamp, hexToRgb, rgbToHex, rgbToHsl, hslToRgb, pack, unpack, mix, ramp, hueToward };
+  // Gentler ramp for skin: small steps, little hue drift, so faces stay clean.
+  function rampSoft(hex) {
+    const key = 'soft:' + String(hex).toLowerCase();
+    if (rampCache.has(key)) return rampCache.get(key);
+    const [r, g, b] = hexToRgb(hex);
+    const [h, s, l] = rgbToHsl(r, g, b);
+    const mk = (hh, ss, ll) => pack(...hslToRgb(hh, clamp(ss, 0, 1), clamp(ll, 0.03, 0.97)));
+    const out = [
+      mk(hueToward(h, 50, 4), s, l + 0.07),
+      pack(r, g, b),
+      mk(hueToward(h, 345, 6), s * 0.95, l - Math.max(0.06, 0.13 * l)),
+      mk(hueToward(h, 340, 10), s * 0.85, l - Math.max(0.12, 0.3 * l)),
+    ];
+    rampCache.set(key, out);
+    return out;
+  }
+
+  SG.color = { clamp, hexToRgb, rgbToHex, rgbToHsl, hslToRgb, pack, unpack, mix, ramp, rampSoft, hueToward };
 })();
