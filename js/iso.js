@@ -168,6 +168,8 @@
       const sx = ((e.clientX - r.left) / r.width) * VIEW_W, sy = ((e.clientY - r.top) / r.height) * VIEW_H;
       const [wx, wy] = toWorld(sx, sy);
       ch.target = [clampW(wx), clampW(wy)];
+      const dx = ch.target[0] - ch.wx, dy = ch.target[1] - ch.wy;
+      if (Math.hypot(dx, dy) > 0.02) ch.dir = facing(((dx - dy) * TW) / 2, ((dx + dy) * TH) / 2);
       ch.running = e.shiftKey;
       cv.focus({ preventScroll: true });
     });
@@ -180,22 +182,35 @@
   }
 
   function update(dt) {
-    let dir = null;
+    const speed = ch.running ? 3.2 : 1.6; // tiles per second
     const kx = (keys.has('right') ? 1 : 0) - (keys.has('left') ? 1 : 0);
     const ky = (keys.has('down') ? 1 : 0) - (keys.has('up') ? 1 : 0);
-    if (kx || ky) dir = facing(kx, ky);
-    else if (ch.target) {
-      const dx = ch.target[0] - ch.wx, dy = ch.target[1] - ch.wy;
-      if (Math.hypot(dx, dy) < 0.06) ch.target = null;
-      else dir = facing((dx - dy) * TW / 2, (dx + dy) * TH / 2);
+    if (kx || ky) {
+      const dir = facing(kx, ky);
+      ch.dir = dir;
+      ch.moving = true;
+      const v = DIRV[dir], len = Math.hypot(v[0], v[1]);
+      ch.wx = clampW(ch.wx + (v[0] / len) * speed * dt);
+      ch.wy = clampW(ch.wy + (v[1] / len) * speed * dt);
+      return;
     }
-    ch.moving = !!dir;
-    if (!dir) return;
-    ch.dir = dir;
-    const v = DIRV[dir], len = Math.hypot(v[0], v[1]);
-    const speed = ch.running ? 3.2 : 1.6; // tiles per second
-    ch.wx = clampW(ch.wx + (v[0] / len) * speed * dt);
-    ch.wy = clampW(ch.wy + (v[1] / len) * speed * dt);
+    if (ch.target) {
+      // walk straight to the clicked spot. The facing is chosen once and only changes if the
+      // heading drifts well away from it, so the sprite never flips between two facings.
+      const dx = ch.target[0] - ch.wx, dy = ch.target[1] - ch.wy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.02) { ch.target = null; ch.moving = false; return; }
+      const sx = ((dx - dy) * TW) / 2, sy = ((dx + dy) * TH) / 2;
+      const cur = (SCREEN_ORDER.indexOf(ch.dir) * Math.PI) / 4;
+      const off = Math.abs(((Math.atan2(sy, sx) - cur + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+      if (off > 0.62) ch.dir = facing(sx, sy);
+      const step = Math.min(dist, speed * dt);
+      ch.wx += (dx / dist) * step;
+      ch.wy += (dy / dist) * step;
+      ch.moving = true;
+      return;
+    }
+    ch.moving = false;
   }
 
   // ---------------------------------------------------------------- drawing
@@ -256,5 +271,5 @@
     items.sort((a, b) => a.z - b.z).forEach((it) => it.draw());
   }
 
-  SG.iso = { init, tick, size: [VIEW_W, VIEW_H] };
+  SG.iso = { init, tick, size: [VIEW_W, VIEW_H], state: ch };
 })();
