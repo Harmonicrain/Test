@@ -135,7 +135,7 @@
   // behind the body, over the back, or in front of the head.
   function hairExtras(R) {
     const st = HAIR[R.cfg.hair];
-    if (!st || !st.extras) return [];
+    if (!st || !st.extras || R.cfg.hat === 'headscarf') return [];
     const e = hairEllipse(R, st);
     const hr = R.ramps.hair;
     const out = [];
@@ -553,6 +553,20 @@
       fr.draw(cm, { ramp: hr, shade: 'sphere', ell: ce, outline: 'full', tag: TAG.cloth });
       const band = cm.clone().keep((x, y) => { const l = local(R, ce, designX(R, x) + 0.5, y + 0.5); return !!l && l.u < 0.22; });
       fr.draw(band, { ramp: R.ramps.top2, shade: 'cyl', outline: 'none', tag: TAG.cloth });
+    } else if (kind === 'headscarf') {
+      if (phase === 'before') return;
+      // wraps the head and falls over the neck and shoulders, leaving the face open
+      const he = { cx: R.hcx, cy: R.hcy - 0.8, rx: R.face.rx + 1.4, ry: R.face.ry + 1.6 };
+      const m = fr.mask().fill(he.cx - he.rx - 1, he.cy - he.ry - 1, he.cx + he.rx + 1, he.cy + he.ry + 1, (px, py) => !!local(R, he, px, py));
+      m.ellipse(R.hcx - R.F.x * 1.5, R.sy + 0.5, R.hw + 1.5, 4.5);
+      m.ellipse(R.hcx - R.F.x * 1.5, R.hcy + 6, R.face.rx - 0.5, 4);
+      const open = R.faceMask.clone().keep((x, y) => {
+        const l = local(R, R.face, designX(R, x) + 0.5, y + 0.5);
+        return !!l && l.f > 0.28 && l.u < 0.5;
+      });
+      m.subtract(open);
+      fr.draw(m, { ramp: hr, shade: 'sphere', ell: he, outline: 'full', tag: TAG.cloth,
+        tone: (sx, sy, t) => { const x = designX(R, sx); return (x * 3 + sy * 5) % 11 === 0 ? 0 : (x + sy * 2) % 13 === 0 ? t + 1 : t; } });
     } else if (kind === 'wizard') {
       if (phase === 'before') return;
       const bu = 0.42;
@@ -673,7 +687,7 @@
     const eyes = faceVisible ? eyePositions(R) : [];
     if (faceVisible) drawFaceDetails(fr, R, eyes);
 
-    if (st) {
+    if (st && R.cfg.hat !== 'headscarf') {
       const e = hairEllipse(R, st);
       const m = fr.mask().fill(e.cx - e.rx - 1, e.cy - e.ry - 1, e.cx + e.rx + 1, e.cy + e.ry + 1, (px, py) => {
         const l = local(R, e, px, py);

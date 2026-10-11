@@ -422,6 +422,29 @@
         const mx = Math.round(x0 + w / 2 - 1);
         fr.px(mx, y0, clip, 0, TAG.other); fr.px(mx + 1, y0, clip, 1, TAG.other);
       }
+    } else if (kind === 'plant') {
+      const x0 = Math.round(hx - 2), y0 = Math.round(hy - 3);
+      fr.draw(fr.mask().rect(x0, y0, 5, 4), { ramp: ramp('#b8603a'), shade: 'cyl', outline: 'full', tag: TAG.other });
+      const leaves = fr.mask().ellipse(hx + 0.5, y0 - 2, 3, 2.4).ellipse(hx - 1.5, y0 - 3.5, 1.6, 1.6).ellipse(hx + 2.2, y0 - 4, 1.5, 1.5);
+      fr.draw(leaves, { ramp: ramp('#4e9a3e'), shade: 'sphere', ell: { cx: hx + 0.5, cy: y0 - 2.5, rx: 3.5, ry: 3 }, outline: 'full', tag: TAG.other });
+      if (c > 0.2) fr.px(Math.round(hx + 1.5), y0 - 5, ramp('#f4f0e6'), 0, TAG.other);
+    } else if (kind === 'camera') {
+      const w = Math.max(2, Math.round(6 * Math.abs(c) + 3 * s)), x0 = Math.round(hx - w / 2), y0 = Math.round(hy - 4);
+      fr.draw(fr.mask().rect(x0, y0, w, 4).rect(x0 + 1, y0 - 1, 2, 1), { ramp: ramp('#2a2a34'), shade: 'flat', flat: 1, outline: 'full', tag: TAG.other });
+      if (c > 0.2 && w >= 4) { const g = ramp('#9ab0c8'); fr.px(Math.round(hx), y0 + 1, g, 0, TAG.other); fr.px(Math.round(hx), y0 + 2, g, 2, TAG.other); fr.px(Math.round(hx) - 1, y0 + 1, g, 1, TAG.other); fr.px(Math.round(hx) - 1, y0 + 2, g, 2, TAG.other); }
+    } else if (kind === 'mic') {
+      const x0 = Math.round(hx), y0 = Math.round(hy - 6);
+      fr.draw(fr.mask().rect(x0, y0 + 2, 1, 5), { ramp: ramp('#2a2a34'), shade: 'flat', outline: 'full', tag: TAG.other });
+      fr.draw(fr.mask().ellipse(x0 + 0.5, y0 + 1, 1.6, 1.6), { ramp: ramp('#a8a8b8'), shade: 'sphere', ell: { cx: x0 + 0.5, cy: y0 + 1, rx: 1.6, ry: 1.6 }, outline: 'full', tag: TAG.other });
+    } else if (kind === 'wrench') {
+      const x0 = Math.round(hx), y0 = Math.round(hy - 7);
+      const m = fr.mask().rect(x0, y0 + 2, 1, 6).rect(x0 - 1, y0, 3, 2);
+      m.unset(x0, y0);
+      fr.draw(m, { ramp: ramp('#b8bcc8'), shade: 'flat', flat: 1, outline: 'full', tag: TAG.other });
+    } else if (kind === 'record') {
+      const rx = Math.max(1, 3.2 * Math.abs(c) + 0.6 * s);
+      fr.draw(fr.mask().ellipse(hx, hy - 3, rx, 3.2), { ramp: ramp('#26242c'), shade: 'flat', flat: 1, outline: 'full', tag: TAG.other });
+      if (c > 0.3) { fr.px(Math.floor(hx), Math.floor(hy - 3), ramp('#c8383c'), 1, TAG.other); fr.px(Math.floor(hx) - 1, Math.floor(hy - 4), ramp('#26242c'), 0, TAG.other); }
     } else if (kind === 'coffee') {
       const x0 = Math.round(hx - 1.5), y0 = Math.round(hy - 5);
       const cup = fr.mask().rect(x0, y0, 4, 5);

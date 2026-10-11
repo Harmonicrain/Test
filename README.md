@@ -78,11 +78,12 @@ with the default settings (idle, walk and run, 1×, row per direction).
   long coat, belted tunic, dress, robe, or none; trousers, cuffed jeans, shorts, skirt, long
   skirt; shoes, sneakers, boots, sandals, barefoot
 - **Accessories**: glasses, earrings (drops, hoops, studs), hats (cap, beanie, sun hat,
-  headband, wizard), a held item (clipboard, coffee cup, phone, book), backpack or cape
+  headband, headscarf, wizard), a held item (clipboard, coffee cup, phone, book, plant, camera,
+  microphone, wrench, vinyl record), a gold lapel badge, backpack or cape
 - **Style**: outline mode (selective, black, coloured, none) and outline colour
 
-Every option has a lock, so **Randomise** only changes what is unlocked. Presets for Mara
-Finch, Maya, Jules Park, Bo Ellis, Nia Okafor and Kit Voss are included. Characters save and
+Every option has a lock, so **Randomise** only changes what is unlocked. Presets cover the whole
+cast: all 26 NPCs from the portrait sheet plus Maya from the cafe scene. Characters save and
 load as JSON.
 
 ## How it draws
