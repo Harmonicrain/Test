@@ -6,7 +6,7 @@
   const PALETTES = {
     skin: ['#ffe2cc', '#f6cfae', '#eab48c', '#d99a70', '#bd7c52', '#9a5c3a', '#7a4428', '#5a301c', '#3e2214'],
     hair: ['#1c1418', '#2e2026', '#4a2c1e', '#6a341e', '#7a4224', '#9a5428', '#c07038', '#d8a050', '#ecd29a', '#c8c4c8', '#f0eeec', '#b02a3a', '#e04a8a', '#7a3fc0', '#3a5ac8', '#2a8a78'],
-    eyes: ['#2a1a14', '#5a3018', '#6a3c1e', '#8a5a2a', '#3a6a9a', '#3d7a4a', '#6a7a8a', '#7a3a8a'],
+    eyes: ['#3a2418', '#6a3c1e', '#8a5230', '#a0703a', '#3a72b0', '#3d8a4e', '#7a8a9a', '#8a4aa0'],
     cloth: ['#5d6a33', '#3e5a2a', '#2f7a4a', '#2a4a6e', '#3a6aa8', '#7aa0d0', '#8a2e2e', '#c8383c', '#d8a440', '#efe4cf', '#f4f2ee', '#a8a8b2', '#4a4a56', '#2a2a34', '#3a3238', '#5a3a6e', '#2a7068', '#6b4a32', '#e07a9a', '#e8c8a0'],
     leather: ['#5a3424', '#7a4a2a', '#9a6a3e', '#2a2026', '#1e1e24', '#efede8', '#c8383c', '#3a5aa8'],
     metal: ['#e0aa38', '#c8ccd4', '#b06a3a', '#2a1e20', '#4a3a6a'],
@@ -27,7 +27,7 @@
     {
       name: 'Face',
       items: [
-        { key: 'eyes', label: 'Eyes', type: 'select', options: ['default', 'sparkly', 'big', 'happy', 'sleepy', 'closed', 'stern', 'beady'] },
+        { key: 'eyes', label: 'Eyes', type: 'select', options: ['default', 'soft', 'big', 'happy', 'sleepy', 'closed', 'stern', 'beady'] },
         { key: 'eyeColor', label: 'Eye colour', type: 'color', palette: 'eyes' },
         { key: 'brows', label: 'Brows', type: 'select', options: ['normal', 'soft', 'thick', 'angry', 'worried', 'none'] },
         { key: 'nose', label: 'Nose', type: 'select', options: ['dot', 'none'] },
@@ -92,7 +92,7 @@
     badge: 'Gold name badge', headscarf: 'Headscarf', plant: 'Potted plant', camera: 'Camera', mic: 'Microphone', wrench: 'Wrench', record: 'Vinyl record', clipboard: 'Clipboard', coffee: 'Coffee cup', phone: 'Phone', book: 'Book',
     backpack: 'Backpack', cape: 'Cape', selout: 'Selective', black: 'Black', colored: 'Coloured',
     slim: 'Slim', average: 'Average', broad: 'Broad', heavy: 'Heavy', straight: 'Straight', curvy: 'Curvy', tall: 'Tall',
-    default: 'Soft', sparkly: 'Sparkly', big: 'Big', happy: 'Happy (closed)', sleepy: 'Sleepy', closed: 'Closed', stern: 'Stern', beady: 'Beady',
+    default: 'Shiny', soft: 'Soft', big: 'Big', happy: 'Happy (closed)', sleepy: 'Sleepy', closed: 'Closed', stern: 'Stern', beady: 'Beady',
     normal: 'Normal', soft: 'Soft', thick: 'Thick', angry: 'Angry', worried: 'Worried', dot: 'Dot', neutral: 'Neutral', smile: 'Smile',
     open: 'Open smile', grin: 'Grin', frown: 'Frown', smirk: 'Smirk', natural: 'Natural', red: 'Red', pink: 'Pink', plum: 'Plum',
     blush: 'Blush', freckles: 'Freckles', stubble: 'Stubble', mustache: 'Mustache', goatee: 'Goatee', beard: 'Full beard',
@@ -102,7 +102,7 @@
   const BASE = {
     name: 'character',
     build: 'average', figure: 'straight', height: 'average', skin: '#eab48c',
-    eyes: 'default', eyeColor: '#5a3018', brows: 'normal', nose: 'dot', mouth: 'smile', lips: 'natural', cheeks: 'none', facialHair: 'none',
+    eyes: 'default', eyeColor: '#7a4424', brows: 'normal', nose: 'dot', mouth: 'smile', lips: 'natural', cheeks: 'none', facialHair: 'none',
     hair: 'short', hairColor: '#6e3a20',
     top: 'tshirt', topColor: '#c8383c', top2Color: '#f4f2ee',
     bottom: 'jeans', bottomColor: '#3a6aa8', shoes: 'sneakers', shoeColor: '#efede8',
@@ -136,7 +136,7 @@
       bottomColor: '#5a3a6e', shoes: 'shoes', shoeColor: '#5a3424', hat: 'headband', hatColor: '#d8a440',
     }),
     'Bea Moreno': P('bea-moreno', {
-      figure: 'curvy', skin: '#d99a70', eyeColor: '#5a3018', mouth: 'smile', lips: 'red', cheeks: 'blush', hair: 'long',
+      figure: 'curvy', skin: '#d99a70', eyeColor: '#7a4424', mouth: 'smile', lips: 'red', cheeks: 'blush', hair: 'long',
       hairColor: '#9a5428', hat: 'headband', hatColor: '#c8903c', earrings: 'hoops', top: 'tank', topColor: '#2a2a34',
       bottom: 'jeans', bottomColor: '#2a2a34', shoes: 'boots', shoeColor: '#2a2026',
     }),
@@ -146,7 +146,7 @@
       shoeColor: '#1e1e24',
     }),
     'Kit Voss': P('kit-voss', {
-      build: 'slim', figure: 'curvy', skin: '#f6cfae', eyes: 'sparkly', eyeColor: '#7a3a8a', mouth: 'open', lips: 'pink',
+      build: 'slim', figure: 'curvy', skin: '#f6cfae', eyes: 'default', eyeColor: '#7a3a8a', mouth: 'open', lips: 'pink',
       hair: 'pigtails', hairColor: '#e04a8a', top: 'jacket', topColor: '#2a2a34', top2Color: '#e07a9a', bottom: 'skirt',
       bottomColor: '#2a2a34', shoes: 'boots', shoeColor: '#1e1e24', earrings: 'hoops', earringColor: '#c8ccd4',
     }),
@@ -161,7 +161,7 @@
       shoeColor: '#1e1e24', earrings: 'drops',
     }),
     'Dominic Pike': P('dominic-pike', {
-      build: 'broad', skin: '#eab48c', eyeColor: '#5a3018', brows: 'thick', mouth: 'grin', hair: 'swept', hairColor: '#6e3a20',
+      build: 'broad', skin: '#eab48c', eyeColor: '#7a4424', brows: 'thick', mouth: 'grin', hair: 'swept', hairColor: '#6e3a20',
       top: 'jacket', topColor: '#2a2a34', top2Color: '#f4f2ee', bottom: 'trousers', bottomColor: '#2a2a34', shoes: 'shoes',
       shoeColor: '#1e1e24', badge: 'badge',
     }),
@@ -181,7 +181,7 @@
       bottomColor: '#6b4a32', shoes: 'shoes', shoeColor: '#5a3424', held: 'plant',
     }),
     'Dee Callow': P('dee-callow', {
-      skin: '#eab48c', eyeColor: '#5a3018', mouth: 'open', cheeks: 'freckles', hair: 'messybun', hairColor: '#9a5428',
+      skin: '#eab48c', eyeColor: '#7a4424', mouth: 'open', cheeks: 'freckles', hair: 'messybun', hairColor: '#9a5428',
       hat: 'headband', hatColor: '#f4f2ee', earrings: 'hoops', top: 'tshirt', topColor: '#2a2a34', bottom: 'jeans',
       bottomColor: '#3a6aa8', shoes: 'sneakers', shoeColor: '#efede8', held: 'coffee',
     }),
@@ -241,7 +241,7 @@
       shoes: 'boots', shoeColor: '#1e1e24',
     }),
     'Gus Pike': P('gus-pike', {
-      skin: '#eab48c', eyeColor: '#5a3018', mouth: 'grin', hair: 'spiky', hairColor: '#6e3a20', glasses: 'round',
+      skin: '#eab48c', eyeColor: '#7a4424', mouth: 'grin', hair: 'spiky', hairColor: '#6e3a20', glasses: 'round',
       glassesColor: '#2a1e20', top: 'hoodie', topColor: '#2a4a6e', top2Color: '#a8a8b2', bottom: 'jeans', bottomColor: '#3a3238',
       shoes: 'sneakers', shoeColor: '#2a2026',
     }),

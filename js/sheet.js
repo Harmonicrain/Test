@@ -19,8 +19,8 @@
 
   const ANIMS = {
     idle: { frames: 4, fps: 5, pose: (i) => ({ bob: 0, breath: i >= 2 ? 1 : 0, sway: 0 }) },
-    walk: { frames: 8, fps: 10, pose: (i, n) => gait(i, n, 5, 3, 3.5, 1) },
-    run: { frames: 6, fps: 14, pose: (i, n) => ({ ...gait(i, n, 7, 5, 5, 2), lean: 1, sway: Math.round(Math.sin((i / n) * Math.PI * 2) * 2) }) },
+    walk: { frames: 8, fps: 10, pose: (i, n) => gait(i, n, 4, 2, 3, 1) },
+    run: { frames: 6, fps: 14, pose: (i, n) => ({ ...gait(i, n, 6, 4, 4, 2), lean: 1, sway: Math.round(Math.sin((i / n) * Math.PI * 2) * 2) }) },
   };
 
   const DIR_ORDERS = {

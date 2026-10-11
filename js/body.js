@@ -40,10 +40,10 @@
     const up = -hg + (pose.bob || 0);
     const breath = pose.breath || 0;
     const lean = pose.lean || 0;
-    const hipY = ground - 20 + up;
-    const sy = hipY - 12 + breath;
+    const hipY = ground - 15 + up;
+    const sy = hipY - 10 + breath;
     const hcx = cx + s * lean;
-    const hcy = sy - 11;
+    const hcy = sy - 10.5;
     // a turned torso keeps its front width in 3/4 views and only slims in profile
     const hw = Math.round(b.bw * (1 - 0.3 * s ** 4));
     const carrying = cfg.held && cfg.held !== 'none';
@@ -68,14 +68,14 @@
       const shy = sy + 2.4;
       if (carrying && i === 0) {
         // carry pose: elbow tucked, forearm forward across the chest
-        const ex = shx + side * 0.6 - s * 0.5, ey = sy + 6.4;
-        const wx = cx + s * (hw + 0.5) - c * r * 0.8, wy = sy + 8 + c * 0.5;
+        const ex = shx + side * 0.6 - s * 0.5, ey = sy + 5.4;
+        const wx = cx + s * (hw + 0.5) - c * r * 0.8, wy = sy + 6.8 + c * 0.5;
         return { r, out, depth: r * s, carry: true, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.4, wy + 0.4] };
       }
       const sw = (pose.arms && pose.arms[i]) || 0;
-      const ex = shx + side * 1.2 + s * sw * 0.45, ey = sy + 7.2 + c * sw * 0.2;
-      const wx = shx + side * 1.0 + s * sw, wy = sy + 12.6 + c * sw * 0.5 - Math.abs(sw) * 0.35;
-      return { r, out, depth: r * s, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.4, wy + 1.4] };
+      const ex = shx + side * 1.0 + s * sw * 0.45, ey = sy + 6 + c * sw * 0.2;
+      const wx = shx + side * 0.9 + s * sw, wy = sy + 10.4 + c * sw * 0.5 - Math.abs(sw) * 0.3;
+      return { r, out, depth: r * s, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.4, wy + 1.2] };
     });
 
     // legs: feet step along the facing direction, in depth as well as sideways
@@ -176,9 +176,9 @@
     const hem = R.hipY + 1 + hemExtra;
     const lx = cx + s * (R.pose.lean || 0) * 0.5;
     return [
-      [lx - hw + 2.6, top], [lx + hw - 2.6, top], [lx + hw - 0.6, top + 1.4], [lx + hw, top + 3.2],
-      [lx + hw - 0.3 + chest, top + 5.5], [cx + wW + belly * s, top + 8.5], [cx + hipW, hem], [cx - hipW, hem],
-      [cx - wW - belly * s * 0.3, top + 8.5], [lx - hw + 0.3, top + 5.5], [lx - hw, top + 3.2], [lx - hw + 0.6, top + 1.4],
+      [lx - hw + 2.6, top], [lx + hw - 2.6, top], [lx + hw - 0.6, top + 1.2], [lx + hw, top + 2.6],
+      [lx + hw - 0.3 + chest, top + 4.6], [cx + wW + belly * s, top + 7.1], [cx + hipW, hem], [cx - hipW, hem],
+      [cx - wW - belly * s * 0.3, top + 7.1], [lx - hw + 0.3, top + 4.6], [lx - hw, top + 2.6], [lx - hw + 0.6, top + 1.2],
     ];
   }
 
@@ -203,7 +203,7 @@
     if (def.skinTorso || def.tank) {
       fr.draw(fr.mask().poly(torsoPts(R)), { ramp: R.ramps.skin, shade: 'cyl', outline: 'full', tag: TAG.skin, th: [0.9, 0.2, -0.6] });
       if (def.skinTorso) {
-        if (front) { fr.px(nx, sy + 9, R.ramps.skin, 2, TAG.skin); fr.px(nx - 2, sy + 5, R.ramps.skin, 2, TAG.skin); fr.px(nx + 1, sy + 5, R.ramps.skin, 2, TAG.skin); }
+        if (front) { fr.px(nx, sy + 7, R.ramps.skin, 2, TAG.skin); fr.px(nx - 2, sy + 4, R.ramps.skin, 2, TAG.skin); fr.px(nx + 1, sy + 4, R.ramps.skin, 2, TAG.skin); }
         return;
       }
       const m = fr.mask().poly(torsoPts(R)).clipY(sy + 3, 999);
@@ -221,22 +221,22 @@
       const outer = fr.mask().poly(outerPts);
       if (c > -0.05) {
         const ox = cx + s * hw * 0.6;
-        const wt = Math.max(1.2, 3.4 * c), close = sy + 9;
+        const wt = Math.max(1.2, 3.2 * c), close = sy + 7.5;
         const open = fr.mask().poly([[ox - wt, sy - 1], [ox + wt, sy - 1], [ox + 0.6, close], [ox - 0.6, close]]);
         // cutaway below the last button
         open.poly([[ox, R.hipY - 2], [ox + 1.6 * c + 0.5, R.hipY + 1 + (def.hem || 0)], [ox - 1.6 * c - 0.5, R.hipY + 1 + (def.hem || 0)]]);
         outer.subtract(open);
         fr.draw(outer, { ramp: R.ramps.top, shade: 'cyl', outline: 'outer', tag: TAG.cloth, th: CLOTH_TH });
         // lapels: light fold beside the opening, dark crease outside it
-        for (let y = sy; y < sy + 7; y++) for (let x = 0; x < fr.w; x++) {
+        for (let y = sy; y < sy + 6; y++) for (let x = 0; x < fr.w; x++) {
           if (!outer.has(x, y)) continue;
           const dl = open.has(x - 1, y) || open.has(x + 1, y);
           const d2 = open.has(x - 2, y) || open.has(x + 2, y);
           if (dl) fr.putTone(x, y, R.ramps.top, 0, TAG.cloth);
           else if (d2 && y > sy) fr.putTone(x, y, R.ramps.top, 2, TAG.cloth);
-          else if ((open.has(x - 3, y) || open.has(x + 3, y)) && y > sy + 1 && y < sy + 6) fr.putTone(x, y, R.ramps.top, 3, TAG.cloth);
+          else if ((open.has(x - 3, y) || open.has(x + 3, y)) && y > sy + 1 && y < sy + 5) fr.putTone(x, y, R.ramps.top, 3, TAG.cloth);
         }
-        for (let y = sy + 7; y < R.hipY + (def.hem || 0); y++) for (let x = 0; x < fr.w; x++) {
+        for (let y = sy + 6; y < R.hipY + (def.hem || 0); y++) for (let x = 0; x < fr.w; x++) {
           if (outer.has(x, y) && (open.has(x - 1, y) || open.has(x + 1, y))) fr.putTone(x, y, R.ramps.top, 3, TAG.cloth);
         }
         // shirt collar and skin V
@@ -253,7 +253,7 @@
         }
         // buttons and pockets
         const bx = Math.floor(ox) - (c > 0.5 ? 1 : 0);
-        if (c > 0.3) { fr.px(bx, sy + 10, R.ramps.top, 3); fr.px(bx, sy + 12, R.ramps.top, 3); }
+        if (c > 0.3) { fr.px(bx, sy + 8, R.ramps.top, 3); }
         if (c > 0.3) {
           for (const side of [-1, 1]) {
             if (side > 0 && s > 0.5) continue;
@@ -290,8 +290,8 @@
         }
         if (def.pocket && c > 0.3) {
           const pl = Math.round(cx - 3.5 + s * 1.5), pr = Math.round(cx + 2.5 + s * 1.5);
-          for (let x = pl + 1; x < pr; x++) fr.darken(x, sy + 7, 1);
-          for (let y = sy + 7; y < R.hipY - 1; y++) { fr.darken(pl, y, 1); fr.darken(pr, y, 1); }
+          for (let x = pl + 1; x < pr; x++) fr.darken(x, sy + 6, 1);
+          for (let y = sy + 6; y < R.hipY - 1; y++) { fr.darken(pl, y, 1); fr.darken(pr, y, 1); }
         }
         if (def.hood) {
           const dx = c > 0.5 ? [nx - 2, nx + 1] : [nx];
@@ -306,13 +306,13 @@
       // a small gold bar on the left breast
       const g = ramp('#e8b84a');
       const bx = Math.round(cx + c * (hw - 3.5) + s * hw * 0.9) - 1;
-      fr.px(bx, sy + 5, g, 0, TAG.other); fr.px(bx + 1, sy + 5, g, 1, TAG.other);
+      fr.px(bx, sy + 4, g, 0, TAG.other); fr.px(bx + 1, sy + 4, g, 1, TAG.other);
     }
 
     if (def.belt) {
-      const belt = fr.mask().poly(outerPts).clipY(sy + 9, sy + 11);
+      const belt = fr.mask().poly(outerPts).clipY(sy + 7, sy + 9);
       fr.draw(belt, { ramp: R.ramps.top2, shade: 'cyl', outline: 'none', tag: TAG.cloth });
-      if (front) { const g = ramp('#e8b030'); fr.px(nx, sy + 9, g, 0, TAG.other); fr.px(nx, sy + 10, g, 2, TAG.other); fr.px(nx - 1, sy + 9, g, 1, TAG.other); fr.px(nx - 1, sy + 10, g, 2, TAG.other); }
+      if (front) { const g = ramp('#e8b030'); fr.px(nx, sy + 7, g, 0, TAG.other); fr.px(nx, sy + 8, g, 2, TAG.other); fr.px(nx - 1, sy + 7, g, 1, TAG.other); fr.px(nx - 1, sy + 8, g, 2, TAG.other); }
     }
   }
 
@@ -326,8 +326,8 @@
       const ax = cx + s * hw * 0.55;
       const half = Math.max(1.5, (hw - 1.5) * c + 1.2 * s);
       const m = fr.mask().poly([
-        [ax - half + 1, sy + 3], [ax + half - 1, sy + 3], [ax + half - 0.5, sy + 8],
-        [ax + half + 1.2, hipY + 9], [ax - half - 1.2, hipY + 9], [ax - half + 0.5, sy + 8],
+        [ax - half + 1, sy + 2.5], [ax + half - 1, sy + 2.5], [ax + half - 0.5, sy + 6.5],
+        [ax + half + 1.2, hipY + 7], [ax - half - 1.2, hipY + 7], [ax - half + 0.5, sy + 6.5],
       ]);
       fr.draw(m, { ramp: A, shade: 'cyl', outline: 'full', tag: TAG.cloth, th: CLOTH_TH });
       // neck strap and pocket
@@ -343,7 +343,7 @@
       }
     } else {
       // ties at the back of the waist
-      const y = sy + 8;
+      const y = sy + 6.5;
       const m = fr.mask().rect(Math.round(cx - hw + 0.5), y, Math.round(hw * 2 - 1), 1);
       m.ellipse(cx - 1.5 + s * 1, y + 1, 1.5, 1.3).ellipse(cx + 1.5 + s * 1, y + 1, 1.5, 1.3).rect(Math.round(cx - 1 + s), y + 1, 2, 4);
       fr.draw(m, { ramp: A, shade: 'flat', flat: 1, outline: 'full', tag: TAG.cloth });
@@ -473,7 +473,7 @@
       const z = -c;
       const px = cx - s * (hw + 2);
       const half = (12 * Math.abs(c) + 6 * s) / 2;
-      const top = sy + 1, bot = sy + 13;
+      const top = sy + 1, bot = sy + 11;
       const draw = (fr) => {
         const m = fr.mask().poly([[px - half + 1.5, top], [px + half - 1.5, top], [px + half, top + 2], [px + half, bot], [px - half, bot], [px - half, top + 2]]);
         fr.draw(m, { ramp: B, shade: 'cyl', outline: 'full', tag: TAG.cloth, th: CLOTH_TH,

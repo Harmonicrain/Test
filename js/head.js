@@ -276,8 +276,8 @@
   // inner (nose side) then outer, so both eyes mirror cleanly. k = dark, i = iris,
   // w = white glint, s = lid shadow, . = skin. `at` is the first box row the template uses.
   const EYES = {
-    default: { rows: ['k', 'i'], at: 1 }, // small and calm, like the in-game sprites
-    sparkly: { rows: ['kk', 'iw', 'ii'], at: 1 }, // lash, iris and a glint
+    default: { rows: ['kk', 'iw', 'ii'], at: 1 }, // shiny: lash, iris and a glint
+    soft: { rows: ['k', 'i'], at: 1 }, // small and calm
     big: { rows: ['kk', 'wk', 'ik', 'ii'] }, // big anime eyes
     happy: { rows: ['kk', 'k.'], at: 1, wide: true },
     sleepy: { rows: ['ss', 'kk'], at: 1 },
@@ -338,7 +338,7 @@
     const cfg = R.cfg;
     const skin = R.ramps.skin;
     const dark = mix(skin[3], R.style.color, 0.82);
-    const iris = mix(hex(cfg.eyeColor), dark, 0.15);
+    const iris = hex(cfg.eyeColor);
     const white = hex('#fffaf4');
     const browCol = mix(R.ramps.hair[2], R.style.color, 0.2); // softer than the outline
     const tpl = EYES[cfg.eyes] || EYES.default;
