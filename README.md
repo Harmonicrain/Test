@@ -19,7 +19,7 @@ npx http-server -p 8080 .
 
 | Setting      | Default                                                                 |
 | ------------ | ----------------------------------------------------------------------- |
-| Frame        | 48 × 72 px, character about 26 × 62 px. Padded 64 × 80 and 64 × 96 are also available |
+| Frame        | 48 × 72 px, character about 26 × 56 px. Padded 64 × 80 and 64 × 96 are also available |
 | Pivot        | Feet, 5 px above the bottom of the frame (`pivot` in the atlas)          |
 | Directions   | S, SE, E, NE, N, NW, W, SW. W, SW and NW are mirrored from E, SE and NE  |
 | Animations   | idle (4 frames, 5 fps), walk (8 frames, 10 fps), run (6 frames, 14 fps)  |

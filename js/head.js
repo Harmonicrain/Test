@@ -292,14 +292,14 @@
     const s = R.s;
     m.fill(e.cx - e.rx - 2, e.cy - e.ry - 1, e.cx + e.rx + 2, e.cy + e.ry + 1, (px, py) => {
       const dyn = (py - e.cy) / e.ry;
-      const jaw = dyn > 0 ? dyn : 0;
-      const k = 1 - (0.3 + 0.35 * Math.max(0, -R.c)) * jaw * jaw;
-      const dx = px - e.cx - s * 1.1 * jaw * jaw;
+      const jaw = dyn > 0.25 ? (dyn - 0.25) / 0.75 : 0; // full cheeks, then a soft rounded chin
+      const k = 1 - (0.2 + 0.4 * Math.max(0, -R.c)) * jaw * jaw;
+      const dx = px - e.cx - s * 0.9 * jaw * jaw;
       // from behind only the neck shows below the skull, except the cheek and jaw on the
       // side turned toward the camera in a 3/4 back view
       const nearCheek = R.Rv.z > 0.3 && dx * R.Rv.x > 0;
       if (R.c < -0.1 && dyn > 0.45 && Math.abs(dx) > 3 && !nearCheek) return false;
-      return Math.abs(dx / (e.rx * k)) ** 2.2 + Math.abs(dyn) ** 2.2 <= 1;
+      return Math.abs(dx / (e.rx * k)) ** 2.3 + Math.abs(dyn) ** 2.3 <= 1;
     });
     return m;
   }
@@ -671,11 +671,11 @@
 
     drawHat(fr, R, 'before');
     for (const ear of earList.filter((e) => e.kind === 'edge')) {
-      fr.draw(fr.mask().ellipse(ear.x + ear.side * 0.3, ear.y + 2, 1.4, 2.3), { ramp: skin, shade: 'flat', flat: 1, outline: 'full', tag: TAG.skin });
+      fr.draw(fr.mask().rect(ear.side > 0 ? ear.x : ear.x, ear.y + 1, 1, 3), { ramp: skin, shade: 'flat', flat: 1, outline: 'full', tag: TAG.skin });
     }
-    fr.draw(fm, { ramp: skin, shade: 'sphere', ell: R.face, th: [0.97, 0.02, -0.85], outline: 'full', tag: TAG.skin });
+    fr.draw(fm, { ramp: skin, shade: 'edge', outline: 'full', tag: TAG.skin });
     for (const ear of earList) {
-      if (ear.kind === 'edge') { fr.px(ear.x, ear.y + 1, skin, 2, TAG.skin); fr.px(ear.x, ear.y + 2, skin, 2, TAG.skin); }
+      if (ear.kind === 'edge') { fr.px(ear.x, ear.y + 2, skin, 2, TAG.skin); }
       else {
         for (let j = 0; j < 4; j++) fr.px(ear.x, ear.y + j, skin, j === 0 || j === 3 ? 2 : 1, TAG.skin);
         fr.px(ear.x + ear.back, ear.y + 1, skin, 2, TAG.skin); fr.px(ear.x + ear.back, ear.y + 2, skin, 2, TAG.skin);
