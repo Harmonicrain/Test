@@ -46,7 +46,7 @@
       <div id="view-preview" role="tabpanel" aria-labelledby="tab-preview" class="view">
         <div class="preview-wrap">
           <div class="preview-box checker">
-            <canvas id="preview" width="32" height="48" aria-label="Animated character preview"></canvas>
+            <canvas id="preview" width="48" height="72" aria-label="Animated character preview"></canvas>
           </div>
           <div class="preview-side">
             <div class="ctl-block">
@@ -73,13 +73,14 @@
         </div>
         <div class="strip-head">
           <span class="eyebrow">All directions</span>
+          <span class="readout">frame 48 × 72 · pivot at the feet</span>
         </div>
         <div class="strip checker" id="strip"></div>
       </div>
 
       <div id="view-iso" role="tabpanel" aria-labelledby="tab-iso" class="view" hidden>
         <div class="iso-box">
-          <canvas id="iso" width="384" height="240" tabindex="0" aria-label="Isometric test floor. Use WASD or arrow keys to walk, Shift to run, or tap a tile."></canvas>
+          <canvas id="iso" width="448" height="280" tabindex="0" aria-label="Isometric test floor. Use WASD or arrow keys to walk, Shift to run, or tap a tile."></canvas>
         </div>
         <p class="hint">Walk with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrow keys, hold <kbd>Shift</kbd> to run, or tap a tile to walk there.</p>
       </div>
@@ -98,10 +99,9 @@
       <div class="export-grid">
         <label for="opt-frame">Frame size
           <select id="opt-frame">
-            <option value="32x48">32 × 48</option>
-            <option value="32x56">32 × 56</option>
-            <option value="48x64">48 × 64</option>
-            <option value="64x64">64 × 64</option>
+            <option value="48x72">48 × 72 (native)</option>
+            <option value="64x80">64 × 80 (padded)</option>
+            <option value="64x96">64 × 96 (padded)</option>
           </select>
         </label>
         <label for="opt-scale">Scale

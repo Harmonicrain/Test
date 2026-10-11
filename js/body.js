@@ -501,13 +501,11 @@
     for (const a of otherArms) {
       if (a.carry && !heldBehind) {
         // the item sits in front of the body; the hand closes over it
-        const def = TOPS[cfg.top] || TOPS.tshirt;
         drawArm(fr, R, a);
         drawHeld(fr, R, a);
         const [hx, hy] = a.hand;
         const he = { cx: hx, cy: hy, rx: 2.1, ry: 2.3 };
         fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], outline: 'full', tag: TAG.skin });
-        void def;
       } else drawArm(fr, R, a);
     }
     run('overBack');
