@@ -54,26 +54,26 @@
   const HAIR = {
     bald: null,
     buzz: { vol: 0.3, tex: 'fine', pred: cap({ hairline: 0.4, nape: -0.25 }) },
-    short: { vol: 1.0, tex: 'clumps', clumps: 9, twist: 0.5, pred: cap({ hairline: (r) => 0.32 - 0.16 * tri(r * 3 + 0.5) }) },
+    short: { vol: 1.0, tex: 'clumps', clumps: 8, twist: 0.5, pred: cap({ hairline: (r) => 0.36 - 0.16 * Math.abs(Math.cos(r * 4.5)), front: 0 }) },
     swept: { vol: 1.4, dy: 0.4, tex: 'clumps', clumps: 8, twist: 1.1, pred: cap({ hairline: (r) => 0.14 + 0.3 * r - 0.1 * tri(r * 4) }) },
     messybun: {
-      vol: 1.2, dy: 0.5, tex: 'curls', clumps: 6, twist: 0.7, tufts: 12,
-      pred: cap({ hairline: (r) => 0.3 + 0.2 * r - 0.14 * tri(r * 3 + 0.2), nape: -0.5, front: 0.02, ears: false }),
-      extras: ['bun', 'curlLocks'], bun: { f: -0.5, r: 0.12, u: 0.82, rad: 4.4, cluster: true },
+      vol: 1.5, dy: 0.5, tex: 'curls', clumps: 9, tufts: 14,
+      pred: cap({ hairline: (r) => 0.34 - 0.16 * r - 0.14 * Math.abs(Math.cos(r * 4.2 + 0.4)), nape: -0.5, front: -0.12, ears: true }),
+      extras: ['bun', 'curlLocks'], bun: { f: -0.45, r: 0.1, u: 0.86, rad: 4.8, cluster: true },
     },
     topbun: {
       vol: 0.8, tex: 'combed', clumps: 12, twist: 0, pred: cap({ hairline: 0.4, nape: -0.35 }),
       extras: ['bun'], bun: { f: -0.1, r: 0, u: 1, rad: 3.8 },
     },
     ponytail: { vol: 0.9, tex: 'combed', clumps: 12, twist: 0, pred: cap({ hairline: (r) => 0.36 - 0.06 * tri(r * 4) }), extras: ['ponytail'] },
-    pigtails: { vol: 1.1, tex: 'clumps', clumps: 9, twist: 0.3, pred: cap({ hairline: (r) => 0.28 - 0.14 * tri(r * 3 + 0.5), ears: false }), extras: ['pigtails'] },
-    bob: { vol: 1.5, tex: 'clumps', clumps: 11, twist: 0.2, pred: cap({ hairline: (r) => 0.28 - 0.1 * tri(r * 4 + 0.5), nape: -0.7, front: 0.26, ears: false }) },
+    pigtails: { vol: 1.1, tex: 'clumps', clumps: 8, twist: 0.3, pred: cap({ hairline: (r) => 0.32 - 0.16 * Math.abs(Math.cos(r * 4.5)), front: 0, ears: false }), extras: ['pigtails'] },
+    bob: { vol: 1.5, tex: 'clumps', clumps: 10, twist: 0.2, pred: cap({ hairline: (r) => 0.32 - 0.14 * Math.abs(Math.cos(r * 4.5)), nape: -0.7, front: 0.2, ears: false }) },
     long: {
       vol: 1.3, tex: 'clumps', clumps: 11, twist: 0.3,
-      pred: cap({ hairline: (r) => 0.22 + 0.14 * r - 0.08 * tri(r * 4), nape: -0.62, front: 0.24, ears: false }),
+      pred: cap({ hairline: (r) => 0.3 + 0.1 * r - 0.14 * Math.abs(Math.cos(r * 4.5)), nape: -0.62, front: 0.16, ears: false }),
       extras: ['curtain', 'locks'],
     },
-    afro: { vol: 3.6, dy: 1.7, tex: 'curls', clumps: 11, twist: 1.6, tufts: 26, pred: cap({ hairline: (r) => 0.3 - 0.06 * tri(r * 5), nape: -0.55, front: 0.42, ears: false }) },
+    afro: { vol: 3.6, dy: 1.7, tex: 'curls', clumps: 12, tufts: 22, pred: cap({ hairline: (r) => 0.3 - 0.06 * tri(r * 5), nape: -0.55, front: 0.42, ears: false }) },
     spiky: { vol: 1.1, tex: 'clumps', clumps: 8, twist: 0.4, pred: cap({ hairline: (r) => 0.32 - 0.22 * tri(r * 3.5 + 0.5) }), extras: ['spikes'] },
     mohawk: {
       vol: 2.8, dy: 1.2, tex: 'clumps', clumps: 7, twist: 0,
@@ -86,25 +86,46 @@
     return { cx: R.hcx, cy: R.hcy - 1 - (st.dy || 0), rx: R.face.rx + 0.6 + v, ry: R.face.ry + 0.4 + v * 0.9 };
   }
 
-  // Hair is shaded as locks radiating from the crown: each lock gets its own light side and
-  // shadow side on top of the overall sphere shading, with a dark gap between locks.
+  // Hair shading. Curly and clumpy styles are covered in soft rounded locks laid out on a
+  // lattice over the sphere: each lock catches light on its upper left and falls into shadow
+  // on its lower right, with darker gaps between locks. The lattice lives in head-local
+  // coordinates, so locks stay put as the head turns.
   function hairTone(R, e, st) {
-    const n = st.clumps || 9, tw = st.twist || 0;
+    if (st.tex === 'fine') return undefined;
+    if (st.tex === 'combed') {
+      const n = st.clumps || 12;
+      return (sx, sy, t) => {
+        const l = local(R, e, designX(R, sx) + 0.5, sy + 0.5);
+        if (!l || l.u > 0.95) return t;
+        return frac((Math.atan2(l.r, l.f) * n) / (2 * Math.PI) + 0.3) < 0.13 ? t + 1 : t;
+      };
+    }
+    const curly = st.tex === 'curls';
+    const n = st.clumps || (curly ? 9 : 7);
+    const dLon = (2 * Math.PI) / n, dU = curly ? 0.36 : 0.5;
+    const rad = (curly ? 0.62 : 0.72) * dLon * e.rx; // lock radius in pixels
     return (sx, sy, t) => {
-      const l = local(R, e, designX(R, sx) + 0.5, sy + 0.5);
-      if (!l || st.tex === 'fine') return t;
-      if (l.u > 0.95) return t;
+      const px = designX(R, sx) + 0.5, py = sy + 0.5;
+      const l = local(R, e, px, py);
+      if (!l) return t;
+      const j = Math.round((l.u - 0.9) / dU);
+      const uc = Math.max(-0.95, Math.min(0.95, 0.9 + j * dU));
+      const off = (((j % 2) + 2) % 2) * 0.5;
       const lon = Math.atan2(l.r, l.f);
-      const v = frac((lon * n) / (2 * Math.PI) + l.u * tw + 0.3);
-      if (st.tex === 'combed') return v < 0.14 ? t + 1 : t;
-      if (v < 0.13) return Math.min(3, t + 1 + (t >= 1 ? 1 : 0));
-      if (v < 0.32) return t + 1;
-      if (v > 0.62 && v < 0.84 && t <= 1 && l.u > -0.2) return t - 1;
+      const lonc = (Math.round(lon / dLon - off) + off) * dLon;
+      const k = Math.sqrt(1 - uc * uc);
+      const c = proj(R, e, Math.cos(lonc) * k, Math.sin(lonc) * k, uc);
+      const dx = px - c.x, dy = py - c.y;
+      const d = Math.hypot(dx, dy) / rad;
+      if (d > 1) return Math.min(3, t + 1);
+      const lit = (-dx - dy) / (Math.hypot(dx, dy) || 1);
+      if (d > 0.3 && lit > 0.45 && t <= 1) return t - 1;
+      if (d > 0.62 && lit < -0.35) return t + 1;
       return t;
     };
   }
 
-  const HAIR_TH = [0.82, 0.18, -0.45];
+  const HAIR_TH = [0.95, 0.12, -0.5];
 
   function hasHat(R, kinds) {
     return kinds.includes(R.cfg.hat);
@@ -129,7 +150,9 @@
         tone: (sx, sy, t) => {
           const dx = (sx + 0.5 - ecx) / rad, dy = (sy + 0.5 - cy) / rad;
           const d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
-          return d > 0.35 && d < 0.62 && Math.sin(a + d * 6) > -0.1 ? t + 1 : t;
+          if (d > 0.42 && d < 0.6 && a > -0.4 && a < 2.4) return t + 1; // the curl's inner fold
+          if (d > 0.25 && d < 0.75 && a < -1.4 && a > -2.9 && t <= 1) return t - 1;
+          return t;
         },
       });
     };
@@ -144,10 +167,11 @@
           draw(fr) {
             if (b.cluster) {
               // a loose curly bun: three overlapping puffs
-              const q1 = proj(R, e, b.f * 1.1 - 0.35, b.r * 1.1 + 0.4, b.u);
-              const q2 = proj(R, e, b.f * 1.1 + 0.2, b.r * 1.1 - 0.45, b.u * 1.05);
-              const back = [q1, q2].sort((a, c) => a.z - c.z);
-              for (const q of back) ball(fr, q.x, q.y - 0.5, b.rad * 0.72);
+              const q1 = proj(R, e, b.f * 1.1 - 0.3, b.r * 1.1 + 0.5, b.u * 0.98);
+              const q2 = proj(R, e, b.f * 1.1 + 0.15, b.r * 1.1 - 0.55, b.u * 1.02);
+              const q3 = proj(R, e, b.f * 1.1 - 0.1, b.r * 1.1, b.u * 1.18);
+              const back = [q1, q2, q3].sort((a, c) => a.z - c.z);
+              for (const q of back) ball(fr, q.x, q.y - 0.5, b.rad * 0.7);
             }
             ball(fr, p.x, p.y, b.rad);
           },
@@ -198,18 +222,19 @@
           });
         }
       } else if (kind === 'curlLocks') {
-        // springy curls that fall beside the cheeks
+        // coiled tendrils that frame the face, temple to jaw
         for (const side of [1, -1]) {
-          const p = proj(R, R.face, 0.1, side * 0.99, 0.1);
-          if (p.z < 0.1) continue;
+          const p = proj(R, R.face, -0.12, side * 0.98, 0.25);
+          if (p.z < 0.3) continue;
           const d = Math.sign(p.x - R.face.cx) || side;
-          const x = p.x + d * 0.8, y = p.y - 1;
+          const x = p.x + d * 0.6, y = p.y;
+          const len = side > 0 ? 10 : 8; // longer on her right, like the portrait
+          const pts = [[x, y], [x + d * 1.3, y + len * 0.25], [x - d * 0.2, y + len * 0.5], [x + d * 1.1, y + len * 0.75], [x + d * 0.1, y + len]];
           out.push({
             layer: 'front',
             draw(fr) {
-              const m = fr.mask().stroke([[x, y], [x + d * 1.2, y + 2.5], [x - d * 0.2, y + 5], [x + d * 1, y + 7.5], [x + d * 0.2, y + 9]], 0.95);
-              fr.draw(m, { ramp: hr, shade: 'flat', flat: 1, outline: 'outer', tag: TAG.hair,
-                tone: (sx, sy, t) => ((sy + designX(R, sx)) % 3 === 0 ? 2 : t) });
+              fr.draw(fr.mask().stroke(pts, [1.4, 1.0]), { ramp: hr, shade: 'flat', flat: 1, outline: 'full', tag: TAG.hair,
+                tone: (sx, sy, t) => ((sy - Math.round(y)) % 3 === 0 ? 0 : (sy - Math.round(y)) % 3 === 2 ? 2 : t) });
             },
           });
         }
@@ -238,27 +263,28 @@
   // Curly styles get a scalloped silhouette: small puffs where hair meets the rim.
   function tuftsMask(R, e, m, n) {
     for (let k = 0; k < n; k++) {
-      const a = (k / n) * Math.PI * 2;
+      const a = Math.PI * 0.92 + (k / (n - 1)) * Math.PI * 1.16; // from the left side, over the crown, to the right side
       const rx = Math.cos(a), ry = Math.sin(a);
-      const ix = e.cx + rx * (e.rx - 1.4), iy = e.cy + ry * (e.ry - 1.4);
+      const ix = e.cx + rx * (e.rx - 1.5), iy = e.cy + ry * (e.ry - 1.5);
       if (!m.hasD(Math.floor(ix), Math.floor(iy))) continue;
-      m.ellipse(e.cx + rx * (e.rx - 0.1), e.cy + ry * (e.ry - 0.1), 1.9, 1.7);
+      m.ellipse(e.cx + rx * (e.rx - 0.4), e.cy + ry * (e.ry - 0.4), 2, 1.9);
     }
   }
 
   // ---------------------------------------------------------------- face
-  // Eye templates: rows top to bottom; columns inner (nose side) to outer.
-  // k = dark, i = iris, w = white glint, s = lid shadow, . = skin.
+  // Eye templates sit in a 2-column x 4-row eye box. Rows run top to bottom; columns run
+  // inner (nose side) then outer, so both eyes mirror cleanly. k = dark, i = iris,
+  // w = white glint, s = lid shadow, . = skin. `at` is the first box row the template uses.
   const EYES = {
-    default: ['kkk', 'wik', 'ii.'],
-    round: ['kkk', 'iwi', 'iii'],
-    happy: ['.k.', 'k.k'],
-    sleepy: ['...', 'kkk', 'ii.'],
-    closed: ['...', 'kkk'],
-    stern: ['kk.', 'iik', 'ii.'],
-    beady: ['.k.', '.k.'],
+    default: { rows: ['kk', 'wk', 'ik', 'ii'] },
+    round: { rows: ['kk', 'kw', 'ki', 'kk'] },
+    happy: { rows: ['kk', 'k.'], at: 1, wide: true },
+    sleepy: { rows: ['ss', 'kk', 'ii'], at: 1 },
+    closed: { rows: ['kk'], at: 2 },
+    stern: { rows: ['kk', 'ik', 'ii'], at: 1 },
+    beady: { rows: ['k', 'k'], at: 1 },
   };
-  const BROWS = { normal: [0, 0, 0], thick: [0, 0, 0], angry: [1, 0, 0], worried: [-1, 0, 1], soft: [0, 0, 1] };
+  const BROWS = { normal: [0, 0], soft: [0, 1], thick: [0, 0], angry: [1, 0], worried: [0, 1] };
 
   function faceMask(R) {
     const e = R.face;
@@ -267,129 +293,138 @@
     m.fill(e.cx - e.rx - 2, e.cy - e.ry - 1, e.cx + e.rx + 2, e.cy + e.ry + 1, (px, py) => {
       const dyn = (py - e.cy) / e.ry;
       const jaw = dyn > 0 ? dyn : 0;
-      const k = 1 - (0.36 + 0.35 * Math.max(0, -R.c)) * jaw * jaw;
-      const dx = px - e.cx - s * 1.2 * jaw * jaw;
-      if (R.c < -0.1 && dyn > 0.45 && Math.abs(dx) > 2.8) return false; // back view: only the neck below the skull
-      return Math.abs(dx / (e.rx * k)) ** 2.4 + Math.abs(dyn) ** 2.4 <= 1;
+      const k = 1 - (0.3 + 0.35 * Math.max(0, -R.c)) * jaw * jaw;
+      const dx = px - e.cx - s * 1.1 * jaw * jaw;
+      if (R.c < -0.1 && dyn > 0.45 && Math.abs(dx) > 3) return false; // back view: only the neck below the skull
+      return Math.abs(dx / (e.rx * k)) ** 2.2 + Math.abs(dyn) ** 2.2 <= 1;
     });
     return m;
   }
 
   function noseX(R) {
-    return proj(R, R.face, 0.97, 0, -0.18, 0.8).x;
+    return proj(R, R.face, 0.97, 0, -0.3, 0.85).x;
   }
 
+  // Big eyes, set low and wide: that is most of what reads as cute at this size.
   function eyePositions(R) {
     const out = [];
     const nx = noseX(R);
     for (const side of [1, -1]) {
-      const p = proj(R, R.face, 0.8, side * 0.6, 0.02, 0.8);
+      const p = proj(R, R.face, 0.86, side * 0.5, -0.12, 0.85);
       if (p.z < 0.05) continue;
-      const narrow = p.z < 0.62;
       const x = Math.floor(p.x);
       const outward = x + 0.5 < nx ? -1 : 1;
-      out.push({ x, top: Math.floor(p.y) - 1, outward, side, narrow });
+      out.push({ x, top: Math.floor(p.y) - 2, outward, side, narrow: p.z < 0.6 });
     }
     return out;
   }
 
-  // columns of an eye, inner to outer, as design-space x
+  // columns of the eye box, inner then outer, as design-space x
   function eyeCols(ey) {
-    const cols = [ey.x - ey.outward, ey.x, ey.x + ey.outward];
-    return ey.narrow ? cols.slice(0, 2) : cols;
+    return [ey.x, ey.x + ey.outward];
   }
 
   function lipColors(R) {
     const skin = R.ramps.skin;
     const lips = { natural: '#8a3a40', red: '#b0283a', plum: '#6a2448', pink: '#d0507a' }[R.cfg.lips || 'natural'] || '#8a3a40';
-    return { line: mix(hex(lips), skin[3], R.cfg.lips === 'natural' || !R.cfg.lips ? 0.45 : 0.15), inner: mix(hex('#8a2030'), hex(lips), 0.4), tongue: mix(skin[2], hex('#d05060'), 0.6) };
+    return { line: mix(hex(lips), skin[3], R.cfg.lips === 'natural' || !R.cfg.lips ? 0.45 : 0.15), inner: mix(hex('#8a2030'), hex(lips), 0.4), tongue: mix(skin[2], hex('#e06070'), 0.6) };
   }
 
   function drawFaceDetails(fr, R, eyes) {
     const cfg = R.cfg;
     const skin = R.ramps.skin;
-    const dark = mix(skin[3], R.style.color, 0.8);
-    const iris = mix(hex(cfg.eyeColor), dark, 0.1);
-    const white = hex('#fbf6f0');
-    const browCol = mix(R.ramps.hair[3], R.style.color, 0.25);
+    const dark = mix(skin[3], R.style.color, 0.82);
+    const iris = mix(hex(cfg.eyeColor), dark, 0.15);
+    const white = hex('#fffaf4');
+    const browCol = mix(R.ramps.hair[3], R.style.color, 0.3);
     const tpl = EYES[cfg.eyes] || EYES.default;
+    const glasses = cfg.glasses && cfg.glasses !== 'none';
+    const onFace = (x, y) => R.faceMask.hasD(x, y);
 
     for (const ey of eyes) {
-      const cols = eyeCols(ey);
-      tpl.forEach((row, j) => {
+      const [inner, outer] = eyeCols(ey);
+      const at = tpl.at || 0;
+      tpl.rows.forEach((row, j) => {
+        const y = ey.top + at + j;
+        const cols = row.length === 1 ? [inner] : [inner, outer];
         cols.forEach((x, i) => {
+          if (ey.narrow && i === 1 && !onFace(x + ey.outward, y)) return; // foreshortened far eye stays inside the face
           const ch = row[i];
-          const y = ey.top + j;
           if (ch === 'k') fr.pc(x, y, dark, TAG.eye);
           else if (ch === 'i') fr.pc(x, y, iris, TAG.eye);
           else if (ch === 'w') fr.pc(x, y, white, TAG.eye);
           else if (ch === 's') fr.px(x, y, skin, 2, TAG.skin);
         });
+        // closed happy eyes curve down on both sides
+        if (tpl.wide && j === 1) fr.pc(outer + ey.outward, y, dark, TAG.eye);
       });
-      // brows two rows above the lash line
-      if (cfg.brows !== 'none' && !(cfg.glasses && cfg.glasses !== 'none')) {
+      if (tpl.wide) fr.pc(outer + ey.outward, ey.top + at + 1, dark, TAG.eye);
+
+      // brows: short, high, a skin row clear of glasses
+      if (cfg.brows !== 'none') {
         const offs = BROWS[cfg.brows] || BROWS.normal;
-        const lift = cfg.glasses && cfg.glasses !== 'none' ? 1 : 0; // keep a skin row between brow and frame
-        cols.forEach((x, i) => {
-          const y = ey.top - 2 - lift + offs[i] + (cfg.eyes === 'stern' && i === 0 ? 1 : 0);
+        const by = ey.top - (glasses ? 3 : 2);
+        [inner, outer].forEach((x, i) => {
+          let y = by + offs[i];
+          if (cfg.eyes === 'stern' && i === 0) y += 1;
           fr.pc(x, y, browCol, TAG.hair);
           if (cfg.brows === 'thick') fr.pc(x, y - 1, browCol, TAG.hair);
         });
       }
-      // cheeks under the outer corner
-      const cy = ey.top + tpl.length + 1;
-      const outerX = cols[cols.length - 1];
+
+      // cheeks: a soft pink oval under the outer half of the eye
+      const cy = ey.top + (glasses ? 5 : 4);
+      const cheek = [outer, outer + ey.outward].filter((x) => onFace(x, cy));
       if (cfg.cheeks === 'blush') {
-        const pink = mix(skin[1], hex('#e8607a'), 0.35);
-        fr.pc(outerX, cy, pink, TAG.skin);
-        if (!ey.narrow) fr.pc(cols[1], cy, pink, TAG.skin);
+        const pink = mix(skin[1], hex('#f0607e'), 0.42);
+        cheek.forEach((x) => fr.pc(x, cy, pink, TAG.skin));
       } else if (cfg.cheeks === 'freckles') {
-        fr.px(outerX, cy, skin, 3, TAG.skin);
-        if (!ey.narrow) { fr.px(cols[1], cy + 1, skin, 3, TAG.skin); fr.px(cols[0], cy, skin, 2, TAG.skin); }
+        if (cheek[0] != null) fr.px(cheek[0], cy, skin, 3, TAG.skin);
+        if (cheek[1] != null) fr.px(cheek[1], cy + 1, skin, 3, TAG.skin);
+        fr.px(inner, cy + 1, skin, 2, TAG.skin);
       }
     }
 
-    // nose
+    // nose: a single soft shadow pixel
     const profile = Math.abs(R.F.x) > 0.9;
-    const np = proj(R, R.face, 0.97, 0, -0.18, 0.8);
+    const np = proj(R, R.face, 0.97, 0, -0.3, 0.85);
     if (np.z > 0.1 && cfg.nose !== 'none') {
       const y = Math.floor(np.y);
       if (profile) {
         let edge = -1;
         for (let x = 0; x < R.W; x++) if (R.faceMask.hasD(x, y)) edge = x;
-        if (edge >= 0) { fr.bump(edge + 1, y, skin, 1, TAG.skin); fr.px(edge, y + 1, skin, 2, TAG.skin); }
+        if (edge >= 0) fr.bump(edge + 1, y, skin, 1, TAG.skin);
       } else {
         fr.px(Math.floor(np.x), y, skin, 2, TAG.skin);
-        if (R.c > 0.9) fr.px(Math.floor(np.x), y - 1, skin, 0, TAG.skin);
       }
     }
 
     drawFacialHair(fr, R);
 
     // mouth: templates are written left to right on screen around the mouth centre
-    const mp = proj(R, R.face, 0.84, 0, -0.42, 0.8);
+    const mp = proj(R, R.face, 0.85, 0, -0.52, 0.85);
     if (mp.z > 0.1 && cfg.mouth !== 'none') {
       const col = lipColors(R);
       const MOUTHS = {
         neutral: ['mm'],
         smile: ['m..m', '.mm.'],
-        open: ['mmmm', '.rr.'],
+        open: ['mmmm', '.rr.', '..'],
         grin: ['mmmm', 'mwwm', '.mm.'],
         frown: ['.mm.', 'm..m'],
         smirk: ['...m', '.mm.'],
       };
       let rows = MOUTHS[cfg.mouth] || MOUTHS.neutral;
-      if (Math.abs(R.F.x) > 0.5) rows = rows.map((r) => (r.length > 2 ? r.slice(1, -1) || r : r)); // turned head: narrower mouth
-      if (profile) rows = rows.map((r) => r.slice(-2));
+      if (Math.abs(R.F.x) > 0.5) rows = rows.map((r) => (r.length > 2 ? r.slice(1, -1) : r)); // turned head: narrower mouth
+      if (profile) rows = rows.map((r) => r.slice(-1));
       const w = rows[0].length;
-      const x0 = profile ? Math.floor(mp.x) - 1 : Math.round(mp.x - w / 2);
+      const x0 = profile ? Math.floor(mp.x) : Math.round(mp.x - w / 2);
       const y0 = Math.floor(mp.y);
       rows.forEach((row, j) => {
         for (let i = 0; i < row.length; i++) {
           const ch = row[i];
           const x = x0 + i, y = y0 + j;
-          if (ch === '.' || !R.faceMask.hasD(x, y)) continue;
-          fr.pc(x, y, ch === 'm' ? col.line : ch === 'r' ? col.inner : ch === 'w' ? hex('#fbf6f0') : col.tongue, TAG.skin);
+          if (ch === '.' || !onFace(x, y)) continue;
+          fr.pc(x, y, ch === 'm' ? col.line : ch === 'r' ? col.inner : ch === 'w' ? hex('#fffaf4') : col.tongue, TAG.skin);
         }
       });
     }
@@ -467,14 +502,14 @@
         const pts = [];
         for (let a = -90; a <= 90; a += 15) {
           const t = (a * Math.PI) / 180;
-          const p = proj(R, e, 0.45 + 0.75 * Math.cos(t), 0.88 * Math.sin(t), 0.3);
+          const p = proj(R, e, 0.42 + 0.72 * Math.cos(t), 0.86 * Math.sin(t), 0.4);
           pts.push([p.x, p.y]);
         }
         fr.draw(fr.mask().poly(pts), { ramp: hr, shade: 'flat', flat: 2, outline: 'full', tag: TAG.cloth });
       };
       const behind = R.c < -0.2;
       if (phase === 'before') { if (behind) brim(); return; }
-      const { m } = crown(0.3);
+      const { m } = crown(0.4);
       fr.draw(m, { ramp: hr, shade: 'sphere', ell: e, outline: 'full', tag: TAG.cloth,
         tone: (sx, sy, t) => { const l = local(R, e, designX(R, sx) + 0.5, sy + 0.5); return l && Math.abs(l.r) < 0.06 && l.f > 0 ? t + 1 : t; } });
       const btn = proj(R, e, 0, 0, 1);
@@ -536,12 +571,11 @@
     if (!kind || kind === 'none' || !eyes.length) return;
     const col = hex(R.cfg.glassesColor);
     const lens = mix(hex('#1c1c2a'), col, 0.2);
-    const glint = mix(R.ramps.skin[0], hex('#ffffff'), 0.6);
+    const glint = mix(R.ramps.skin[0], hex('#ffffff'), 0.65);
     const boxes = eyes.map((ey) => {
-      const cols = eyeCols(ey);
-      const inner = cols[0], outer = cols[cols.length - 1] + (ey.narrow ? 0 : ey.outward);
-      const x0 = Math.min(inner, outer) - 1, x1 = Math.max(inner, outer) + 1;
-      return { x0, x1, y0: ey.top - 1, y1: ey.top + 3, ey };
+      const [inner, outer] = eyeCols(ey);
+      const a = inner - ey.outward, b = outer + ey.outward * 2;
+      return { x0: Math.min(a, b), x1: Math.max(a, b), y0: ey.top - 1, y1: ey.top + 4, ey };
     });
     for (const b of boxes) {
       // a foreshortened lens loses its outer rim and never pokes past the face
@@ -552,7 +586,7 @@
         const edgeX = x === b.x0 || x === b.x1, edgeY = y === b.y0 || y === b.y1;
         const corner = edgeX && edgeY;
         if (kind === 'shades') {
-          if (kind === 'shades' && corner) continue;
+          if (corner) continue;
           fr.pc(x, y, x === b.x0 + 1 && y === b.y0 + 1 ? glint : edgeX || edgeY ? col : lens, TAG.other);
           continue;
         }
@@ -560,7 +594,10 @@
         if (kind === 'round' && corner) continue;
         fr.pc(x, y, col, TAG.other);
       }
-      if (kind !== 'shades') fr.pc(b.ey.outward > 0 ? b.x1 - 1 : b.x0 + 1, b.y0 + 1, glint, TAG.other);
+      if (kind !== 'shades') {
+        const gx = b.ey.outward > 0 ? b.x1 - 1 : b.x0 + 1;
+        if (R.faceMask.hasD(gx, b.y0 + 1)) fr.pc(gx, b.y0 + 1, glint, TAG.other);
+      }
     }
     if (boxes.length === 2) {
       const [a, b] = boxes[0].x0 < boxes[1].x0 ? boxes : [boxes[1], boxes[0]];
@@ -585,7 +622,10 @@
       else if (kind === 'hoops') {
         fr.bump(x, y + 1, g, 1, TAG.other); fr.bump(x - 1, y + 2, g, 1, TAG.other); fr.bump(x + 1, y + 2, g, 2, TAG.other); fr.bump(x, y + 3, g, 2, TAG.other);
       } else {
-        fr.bump(x, y, g, 1, TAG.other); fr.bump(x, y + 1, g, 0, TAG.other); fr.bump(x, y + 2, g, 2, TAG.other);
+        // a gold drop hanging from the lobe
+        fr.bump(x, y, g, 2, TAG.other);
+        fr.bump(x, y + 1, g, 0, TAG.other);
+        fr.bump(x, y + 2, g, 1, TAG.other);
       }
     }
   }

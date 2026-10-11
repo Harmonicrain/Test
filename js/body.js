@@ -40,10 +40,10 @@
     const up = -hg + (pose.bob || 0);
     const breath = pose.breath || 0;
     const lean = pose.lean || 0;
-    const hipY = ground - 25 + up;
-    const sy = hipY - 16 + breath;
+    const hipY = ground - 22 + up;
+    const sy = hipY - 14 + breath;
     const hcx = cx + s * lean;
-    const hcy = sy - 9;
+    const hcy = sy - 11;
     const hw = Math.round(b.bw * (0.7 + 0.3 * Math.abs(c)));
     const carrying = cfg.held && cfg.held !== 'none';
 
@@ -54,7 +54,7 @@
 
     const R = {
       cfg, pose, W, H, mirror, deg, c, s, F: { x: s, z: c }, Rv: { x: -c, z: s }, b, cx, ground, sy, hipY, hcx, hcy, hw,
-      face: { cx: hcx, cy: hcy, rx: 7, ry: 7.2 }, ramps, style, carrying,
+      face: { cx: hcx, cy: hcy, rx: 8, ry: 8.2 }, ramps, style, carrying,
     };
 
     // arms: index 0 = character's right
@@ -64,14 +64,14 @@
       const shy = sy + 2.5;
       if (carrying && i === 0) {
         // carry pose: elbow tucked, forearm forward across the chest
-        const ex = shx + out * 0.4 - s * 0.8, ey = sy + 8.5;
-        const wx = cx + s * (hw + 1.5) - c * r * 1.5, wy = sy + 10.5 + c * 1;
-        return { r, out, depth: r * s, carry: true, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.4, wy + 0.6] };
+        const ex = shx + out * 0.5 - s * 0.6, ey = sy + 7.5;
+        const wx = cx + s * (hw + 1) - c * r * 1, wy = sy + 9 + c * 0.5;
+        return { r, out, depth: r * s, carry: true, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.4, wy + 0.4] };
       }
       const sw = (pose.arms && pose.arms[i]) || 0;
-      const ex = shx + out * 0.4 + s * sw * 0.45, ey = sy + 8.5 + c * sw * 0.2;
-      const wx = shx + out * 0.7 + s * sw, wy = sy + 14 + c * sw * 0.5 - Math.abs(sw) * 0.35;
-      return { r, out, depth: r * s, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.5, wy + 1.9] };
+      const ex = shx + out * 0.5 + s * sw * 0.45, ey = sy + 7.5 + c * sw * 0.2;
+      const wx = shx + out * 0.8 + s * sw, wy = sy + 12.2 + c * sw * 0.5 - Math.abs(sw) * 0.35;
+      return { r, out, depth: r * s, sh: [shx, shy], el: [ex, ey], wr: [wx, wy], hand: [wx + s * 0.5, wy + 1.8] };
     });
 
     // legs: feet step along the facing direction, in depth as well as sideways
@@ -122,11 +122,11 @@
     const dim = leg.depth < -0.3 ? 1 : 0;
     const B = leg.fy;
     const bare = kind === 'sandals' || kind === 'barefoot';
-    const h = bare ? 3 : 4;
-    const w = lw + 1;
+    const h = bare ? 3 : 5;
+    const w = lw + 2;
     const x0 = Math.round(leg.fx - w / 2);
     const m = fr.mask().rect(x0, B - h + 1, w, h);
-    m.ellipse(leg.fx + R.s * 2.8, B - 1.2 + R.c * 0.3, 2.7, bare ? 1.4 : 1.9);
+    m.ellipse(leg.fx + R.s * 2.6, B - 1.6 + R.c * 0.3, 3.1, bare ? 1.4 : 2.4);
     m.clipY(0, B + 1);
     if (kind === 'boots') m.rect(x0 + 0.5, B - 9, w - 1, 6);
     const footRamp = bare ? R.ramps.skin : R.ramps.shoe;
@@ -298,6 +298,13 @@
       }
     }
 
+    if (R.cfg.badge === 'badge' && c > 0.2 && !def.skinTorso) {
+      // a small gold bar on the left breast
+      const g = ramp('#e8b84a');
+      const bx = Math.round(cx + c * (hw - 3.5) + s * hw * 0.9) - 1;
+      fr.px(bx, sy + 5, g, 0, TAG.other); fr.px(bx + 1, sy + 5, g, 1, TAG.other);
+    }
+
     if (def.belt) {
       const belt = fr.mask().poly(outerPts).clipY(sy + 11, sy + 13);
       fr.draw(belt, { ramp: R.ramps.top2, shade: 'cyl', outline: 'none', tag: TAG.cloth });
@@ -380,7 +387,7 @@
       }
     }
     const [hx, hy] = arm.hand;
-    const he = { cx: hx, cy: hy, rx: 2.1, ry: 2.3 };
+    const he = { cx: hx, cy: hy, rx: 2.3, ry: 2.3 };
     fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], dim, outline: 'full', tag: TAG.skin });
   }
 
@@ -392,16 +399,19 @@
     const { c, s } = R;
     const wFace = Math.max(1, Math.abs(c)); // how much of the item's face we see
     if (kind === 'clipboard') {
-      const w = Math.max(2, Math.round(7 * Math.abs(c) + 2 * s)), h = 9;
-      const x0 = Math.round(hx - w / 2 + s * 1), y0 = Math.round(hy - 6);
+      // held by its lower edge, the board leaning toward the body's centre
+      const w = Math.max(2, Math.round(6 * Math.abs(c) + 2 * s)), h = 8;
+      const toward = -arm.out || 1;
+      const x0 = Math.round(toward > 0 ? hx - 1 : hx - w + 2), y0 = Math.round(hy - h + 2);
       const board = fr.mask().rect(x0, y0, w, h);
       fr.draw(board, { ramp: ramp('#9a6a3e'), shade: 'flat', flat: 1, outline: 'full', tag: TAG.other });
       if (c > 0.2 && w >= 4) {
-        const paper = fr.mask().rect(x0 + 1, y0 + 1, w - 2, h - 2);
-        fr.draw(paper, { ramp: ramp('#f4f0e6'), shade: 'flat', flat: 1, outline: 'none', tag: TAG.other });
-        for (let y = y0 + 3; y < y0 + h - 1; y += 2) for (let x = x0 + 1; x < x0 + w - 2; x++) fr.px(x, y, ramp('#f4f0e6'), 3, TAG.other);
+        const paper = ramp('#f6f2e8');
+        fr.draw(fr.mask().rect(x0 + 1, y0 + 1, w - 2, h - 2), { ramp: paper, shade: 'flat', flat: 1, outline: 'none', tag: TAG.other });
+        for (let y = y0 + 3; y < y0 + h - 1; y += 2) for (let x = x0 + 1; x < x0 + w - 2; x++) fr.px(x, y, paper, 3, TAG.other);
         const clip = ramp('#c8ccd4');
-        for (let x = Math.round(x0 + w / 2 - 1); x <= Math.round(x0 + w / 2); x++) { fr.px(x, y0, clip, 0, TAG.other); fr.px(x, y0 + 1, clip, 2, TAG.other); }
+        const mx = Math.round(x0 + w / 2 - 1);
+        fr.px(mx, y0, clip, 0, TAG.other); fr.px(mx + 1, y0, clip, 1, TAG.other);
       }
     } else if (kind === 'coffee') {
       const x0 = Math.round(hx - 1.5), y0 = Math.round(hy - 5);
@@ -504,7 +514,7 @@
         drawArm(fr, R, a);
         drawHeld(fr, R, a);
         const [hx, hy] = a.hand;
-        const he = { cx: hx, cy: hy, rx: 2.1, ry: 2.3 };
+        const he = { cx: hx, cy: hy, rx: 2.3, ry: 2.3 };
         fr.draw(fr.mask().ellipse(hx, hy, he.rx, he.ry), { ramp: R.ramps.skin, shade: 'sphere', ell: he, th: [0.95, 0.15, -0.6], outline: 'full', tag: TAG.skin });
       } else drawArm(fr, R, a);
     }
