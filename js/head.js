@@ -58,7 +58,7 @@
     swept: { vol: 1.4, dy: 0.4, tex: 'clumps', clumps: 8, twist: 1.1, pred: cap({ hairline: (r) => 0.14 + 0.3 * r - 0.1 * tri(r * 4) }) },
     messybun: {
       vol: 1.2, dy: 0.5, tex: 'curls', clumps: 6, twist: 0.7, tufts: 12,
-      pred: cap({ hairline: (r) => 0.3 + 0.2 * r - 0.14 * tri(r * 3 + 0.2), nape: -0.5, ears: false }),
+      pred: cap({ hairline: (r) => 0.3 + 0.2 * r - 0.14 * tri(r * 3 + 0.2), nape: -0.5, front: 0.02, ears: false }),
       extras: ['bun', 'curlLocks'], bun: { f: -0.5, r: 0.12, u: 0.82, rad: 4.4, cluster: true },
     },
     topbun: {
@@ -284,7 +284,7 @@
     const nx = noseX(R);
     for (const side of [1, -1]) {
       const p = proj(R, R.face, 0.8, side * 0.6, 0.02, 0.8);
-      if (p.z < 0.15) continue;
+      if (p.z < 0.05) continue;
       const narrow = p.z < 0.62;
       const x = Math.floor(p.x);
       const outward = x + 0.5 < nx ? -1 : 1;
@@ -544,7 +544,11 @@
       return { x0, x1, y0: ey.top - 1, y1: ey.top + 3, ey };
     });
     for (const b of boxes) {
+      // a foreshortened lens loses its outer rim and never pokes past the face
+      const farEdge = b.ey.narrow ? (b.ey.outward > 0 ? b.x1 : b.x0) : null;
       for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) {
+        if (x === farEdge) continue;
+        if (b.ey.narrow && !R.faceMask.hasD(x, y)) continue;
         const edgeX = x === b.x0 || x === b.x1, edgeY = y === b.y0 || y === b.y1;
         const corner = edgeX && edgeY;
         if (kind === 'shades') {

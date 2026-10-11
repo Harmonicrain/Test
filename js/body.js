@@ -183,7 +183,7 @@
     const x = Math.round(R.hcx - nw / 2 + R.s * 0.6);
     const y0 = R.hcy + 4;
     const m = fr.mask().rect(x, y0, nw, R.sy - y0 + 3);
-    fr.draw(m, { ramp: R.ramps.skin, shade: 'flat', outline: 'outer', tag: TAG.skin, tone: (sx, sy) => (sy < R.hcy + 7 ? 2 : 1) });
+    fr.draw(m, { ramp: R.ramps.skin, shade: 'flat', outline: 'outer', tag: TAG.skin, tone: (sx, sy) => (sy < R.hcy + 6 ? 2 : 1) });
   }
 
   const CLOTH_TH = [0.84, 0.25, -0.5];
