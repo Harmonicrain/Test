@@ -17,10 +17,10 @@
   const keys = new Set();
   const cache = new WeakMap();
 
-  // world -> screen, rounded onto the 2:1 pixel lattice (1/16 of a tile is 2 px across, 1 px down)
+  // world -> screen, rounded once in screen space so motion along any direction is monotonic
+  // (rounding the two world axes separately made the sprite hop sideways when walking N or S)
   function toScreen(wx, wy) {
-    const i = Math.round(wx * 16), j = Math.round(wy * 16);
-    return [ORIGIN[0] + 2 * (i - j), ORIGIN[1] + (i + j)];
+    return [Math.round(ORIGIN[0] + ((wx - wy) * TW) / 2), Math.round(ORIGIN[1] + ((wx + wy) * TH) / 2)];
   }
   const toWorld = (sx, sy) => {
     const x = (sx - ORIGIN[0]) / (TW / 2), y = (sy - ORIGIN[1]) / (TH / 2);
